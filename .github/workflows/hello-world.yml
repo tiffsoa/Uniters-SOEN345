@@ -1,0 +1,22 @@
+name: Hello World CI
+
+# tells GitHub to run this robot every time someone pushes to the main branch
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest # temporary cloud computer
+
+    steps:
+    # Step 1: The robot downloads your code
+    - name: Checkout Repository
+      uses: actions/checkout@v3
+
+    # Step 2: The robot runs a simple command
+    - name: Run Hello World Test
+      run: echo "Hello World! The CI pipeline is officially working!"
+      
+    # NOTE: In Sprint 2, change the line above to: ./gradlew test
+    # so it actually runs Android Studio JUnit tests
