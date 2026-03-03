@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "858478506978",
+    "project_id": "ticketreservationapp-7f9ee",
+    "storage_bucket": "ticketreservationapp-7f9ee.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:858478506978:android:6b26c64528a26cfeb9ffbb",
+        "android_client_info": {
+          "package_name": "com.example.ticketreservationapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAAJH4mhi4AAGE7L9LZuLCaizMG01r1l7M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
