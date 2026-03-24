@@ -1,11 +1,13 @@
 package com.example.ticketreservationapp.ui;
-import android.content.Intent;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.text.TextUtils;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,6 +16,7 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.ticketreservationapp.R;
+import com.example.ticketreservationapp.utils.AuthValidator;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -29,9 +32,10 @@ import java.util.concurrent.TimeUnit;
 public class RegisterActivity extends AppCompatActivity {
 
     private EditText etEmail, etPhone, etPassword;
+    private RadioGroup rgRole;
     private FirebaseAuth mAuth;
     private FirebaseFirestore db;
-    private String verificationId; // Needed for phone auth
+    private String verificationId;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -39,12 +43,13 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_register);
 
         mAuth = FirebaseAuth.getInstance();
-        mAuth.getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true); // Bypasses reCAPTCHA
+        mAuth.getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true);
         db = FirebaseFirestore.getInstance();
 
         etEmail = findViewById(R.id.etEmail);
         etPhone = findViewById(R.id.etPhone);
         etPassword = findViewById(R.id.etPassword);
+        rgRole = findViewById(R.id.rgRole); // Bind the new radio group
 
         Button btnRegister = findViewById(R.id.btnRegister);
         TextView tvLoginRedirect = findViewById(R.id.tvLoginRedirect);
@@ -63,40 +68,49 @@ public class RegisterActivity extends AppCompatActivity {
         String password = etPassword.getText().toString().trim();
         String phone = etPhone.getText().toString().trim();
 
-        // Branch 1: Email & Password Registration
-        if (!TextUtils.isEmpty(email) && !TextUtils.isEmpty(password)) {
-            if (password.length() < 6) {
+        //role selection
+        int selectedRoleId = rgRole.getCheckedRadioButtonId();
+        RadioButton selectedRadioButton = findViewById(selectedRoleId);
+        String role = selectedRadioButton.getText().toString(); //"customer" or "administrator"
+
+        //email & password registration
+        if (!TextUtils.isEmpty(email) || !TextUtils.isEmpty(password)) {
+            //uses validator in utils
+            if (!AuthValidator.isValidEmail(email)) {
+                etEmail.setError("Please enter a valid email.");
+                return;
+            }
+            if (!AuthValidator.isValidPassword(password)) {
                 etPassword.setError("Password must be at least 6 characters.");
                 return;
             }
-            registerWithEmail(email, password, phone);
+
+            String formattedPhone = AuthValidator.formatPhoneNumber(phone);
+            registerWithEmail(email, password, formattedPhone, role);
         }
-        // Branch 2: Phone Registration (Email is empty, Phone is not)
+        //phone registration
         else if (!TextUtils.isEmpty(phone)) {
-            // Note: Firebase requires the country code (e.g., +15551234567)
-            if (!phone.startsWith("+")) {
-                phone = "+1" + phone; // Default to North America if no country code provided
-            }
-            sendPhoneVerification(phone);
+            String formattedPhone = AuthValidator.formatPhoneNumber(phone);
+            sendPhoneVerification(formattedPhone, role);
         }
-        // Branch 3: Nothing provided
+        //nothing provided
         else {
             Toast.makeText(this, "Please provide an Email/Password OR a Phone Number", Toast.LENGTH_LONG).show();
         }
     }
 
-    private void registerWithEmail(String email, String password, String phone) {
+    private void registerWithEmail(String email, String password, String phone, String role) {
         mAuth.createUserWithEmailAndPassword(email, password)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        saveUserToFirestore(email, phone);
+                        saveUserToFirestore(email, phone, role);
                     } else {
                         showErrorMsg(task.getException());
                     }
                 });
     }
 
-    private void sendPhoneVerification(String phone) {
+    private void sendPhoneVerification(String phone, String role) {
         PhoneAuthOptions options = PhoneAuthOptions.newBuilder(mAuth)
                 .setPhoneNumber(phone)
                 .setTimeout(60L, TimeUnit.SECONDS)
@@ -104,8 +118,7 @@ public class RegisterActivity extends AppCompatActivity {
                 .setCallbacks(new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
                     @Override
                     public void onVerificationCompleted(@NonNull PhoneAuthCredential credential) {
-                        // Sometimes auto-resolves on emulator
-                        signInWithPhoneAuthCredential(credential, phone);
+                        signInWithPhoneAuthCredential(credential, phone, role);
                     }
 
                     @Override
@@ -116,13 +129,13 @@ public class RegisterActivity extends AppCompatActivity {
                     @Override
                     public void onCodeSent(@NonNull String verificationId, @NonNull PhoneAuthProvider.ForceResendingToken token) {
                         RegisterActivity.this.verificationId = verificationId;
-                        showOTPDialog(phone);
+                        showOTPDialog(phone, role);
                     }
                 }).build();
         PhoneAuthProvider.verifyPhoneNumber(options);
     }
 
-    private void showOTPDialog(String phone) {
+    private void showOTPDialog(String phone, String role) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Enter Verification Code");
 
@@ -134,31 +147,32 @@ public class RegisterActivity extends AppCompatActivity {
             String code = input.getText().toString();
             if (!TextUtils.isEmpty(code)) {
                 PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, code);
-                signInWithPhoneAuthCredential(credential, phone);
+                signInWithPhoneAuthCredential(credential, phone, role);
             }
         });
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
         builder.show();
     }
 
-    private void signInWithPhoneAuthCredential(PhoneAuthCredential credential, String phone) {
+    private void signInWithPhoneAuthCredential(PhoneAuthCredential credential, String phone, String role) {
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        saveUserToFirestore("", phone); // Email is blank for phone-only users
+                        saveUserToFirestore("", phone, role);
                     } else {
                         showErrorMsg(task.getException());
                     }
                 });
     }
 
-    private void saveUserToFirestore(String email, String phone) {
+    //saves role to db
+    private void saveUserToFirestore(String email, String phone, String role) {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
             Map<String, Object> userData = new HashMap<>();
             userData.put("email", email);
             userData.put("phoneNumber", phone);
-            userData.put("role", "Customer");
+            userData.put("role", role); //customer or admin
 
             db.collection("Users").document(user.getUid())
                     .set(userData)
@@ -168,15 +182,12 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void showSuccessDialog() {
-        // Force a Toast message instead of a popup
         Toast.makeText(RegisterActivity.this, "Registration Successful!", Toast.LENGTH_LONG).show();
-
-        mAuth.signOut(); // Wipes the session
+        mAuth.signOut();
         Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
         startActivity(intent);
         finish();
     }
-
 
     private void showErrorMsg(Exception e) {
         String errorMsg = e != null ? e.getMessage() : "Unknown error";
