@@ -177,8 +177,10 @@ public class RegisterActivity extends AppCompatActivity {
         finish();
     }
 
+
     private void showErrorMsg(Exception e) {
         String errorMsg = e != null ? e.getMessage() : "Unknown error";
         Toast.makeText(this, "Authentication failed: " + errorMsg, Toast.LENGTH_LONG).show();
+        System.out.println(errorMsg);
     }
 }
