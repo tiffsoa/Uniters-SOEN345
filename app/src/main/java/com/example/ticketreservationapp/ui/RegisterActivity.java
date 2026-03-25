@@ -17,6 +17,7 @@ import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.ticketreservationapp.R;
 import com.example.ticketreservationapp.utils.AuthValidator;
+import com.google.firebase.BuildConfig;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -43,7 +44,11 @@ public class RegisterActivity extends AppCompatActivity {
         setContentView(R.layout.activity_register);
 
         mAuth = FirebaseAuth.getInstance();
-        mAuth.getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true);
+
+        //only disable phone verification when running app from android studio emulator
+        if (BuildConfig.DEBUG) {
+            mAuth.getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true);
+        }
         db = FirebaseFirestore.getInstance();
 
         etEmail = findViewById(R.id.etEmail);
@@ -70,11 +75,15 @@ public class RegisterActivity extends AppCompatActivity {
 
         //role selection
         int selectedRoleId = rgRole.getCheckedRadioButtonId();
+        if (selectedRoleId == -1) {
+            Toast.makeText(this, "Please select a role.", Toast.LENGTH_SHORT).show();
+            return;
+        }
         RadioButton selectedRadioButton = findViewById(selectedRoleId);
         String role = selectedRadioButton.getText().toString(); //"customer" or "administrator"
 
         //email & password registration
-        if (!TextUtils.isEmpty(email) || !TextUtils.isEmpty(password)) {
+        if (!TextUtils.isEmpty(email) && !TextUtils.isEmpty(password)) {
             //uses validator in utils
             if (!AuthValidator.isValidEmail(email)) {
                 etEmail.setError("Please enter a valid email.");
@@ -158,7 +167,7 @@ public class RegisterActivity extends AppCompatActivity {
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        saveUserToFirestore("", phone, role);
+                        saveUserToFirestore(null, phone, role);
                     } else {
                         showErrorMsg(task.getException());
                     }
@@ -170,7 +179,13 @@ public class RegisterActivity extends AppCompatActivity {
         FirebaseUser user = mAuth.getCurrentUser();
         if (user != null) {
             Map<String, Object> userData = new HashMap<>();
-            userData.put("email", email);
+            if (email != null && !email.isEmpty()) {
+                userData.put("email", email);
+                userData.put("authMethod", "email");
+            } else {
+                userData.put("authMethod", "phone");
+            }
+
             userData.put("phoneNumber", phone);
             userData.put("role", role); //customer or admin
 
