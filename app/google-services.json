@@ -1,6 +1,7 @@
 {
   "project_info": {
     "project_number": "858478506978",
+    "firebase_url": "https://ticketreservationapp-7f9ee-default-rtdb.firebaseio.com",
     "project_id": "ticketreservationapp-7f9ee",
     "storage_bucket": "ticketreservationapp-7f9ee.firebasestorage.app"
   },
