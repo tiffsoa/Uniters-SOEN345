@@ -17,6 +17,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
+        new com.example.ticketreservationapp.utils.FirestoreService().saveTestData();
 
         //check if user is signed in
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
