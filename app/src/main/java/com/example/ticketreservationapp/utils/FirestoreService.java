@@ -1,0 +1,32 @@
+package com.example.ticketreservationapp.utils;
+
+import com.google.firebase.firestore.FirebaseFirestore;
+
+import java.util.HashMap;
+import java.util.Map;
+
+public class FirestoreService {
+
+    private final FirebaseFirestore db;
+
+    public FirestoreService() {
+        db = FirebaseFirestore.getInstance();
+    }
+
+    // Simple method to store data in Firestore
+    public void saveTestData() {
+
+        Map<String, Object> data = new HashMap<>();
+        data.put("message", "Firestore is working");
+        data.put("timestamp", System.currentTimeMillis());
+
+        db.collection("test")
+                .add(data)
+                .addOnSuccessListener(doc -> {
+                    System.out.println("Data saved successfully");
+                })
+                .addOnFailureListener(e -> {
+                    System.out.println("Error saving data");
+                });
+    }
+}
