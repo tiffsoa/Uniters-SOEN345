@@ -25,6 +25,7 @@ import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.auth.FirebaseAuthUserCollisionException;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,6 +50,7 @@ public class RegisterActivity extends AppCompatActivity {
         if (BuildConfig.DEBUG) {
             mAuth.getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true);
         }
+
         db = FirebaseFirestore.getInstance();
 
         etEmail = findViewById(R.id.etEmail);
@@ -167,7 +169,22 @@ public class RegisterActivity extends AppCompatActivity {
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        saveUserToFirestore(null, phone, role);
+                        // Check if Firebase just created this user, or if they already existed
+                        boolean isNewUser = task.getResult().getAdditionalUserInfo().isNewUser();
+
+                        if (isNewUser) {
+                            // It's a new user, save their role to Firestore
+                            saveUserToFirestore(null, phone, role);
+                        } else {
+                            // They already have an account!
+                            Toast.makeText(RegisterActivity.this, "A user is already registered with this phone number. Please log in.", Toast.LENGTH_LONG).show();
+                            mAuth.signOut(); // Sign them out so they have to go through the proper Login flow
+
+                            // Redirect them to the login screen
+                            Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                            startActivity(intent);
+                            finish();
+                        }
                     } else {
                         showErrorMsg(task.getException());
                     }
@@ -197,16 +214,30 @@ public class RegisterActivity extends AppCompatActivity {
     }
 
     private void showSuccessDialog() {
-        Toast.makeText(RegisterActivity.this, "Registration Successful!", Toast.LENGTH_LONG).show();
-        mAuth.signOut();
-        Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
-        startActivity(intent);
-        finish();
+        new AlertDialog.Builder(this)
+                .setTitle("Registration Successful")
+                .setMessage("Your account has been created! You can now log in.")
+                .setPositiveButton("Go to Login", (dialog, which) -> {
+                    mAuth.signOut();
+                    Intent intent = new Intent(RegisterActivity.this, LoginActivity.class);
+                    startActivity(intent);
+                    finish();
+                })
+                .setCancelable(false) // Prevents them from dismissing it by tapping outside
+                .show();
     }
 
     private void showErrorMsg(Exception e) {
-        String errorMsg = e != null ? e.getMessage() : "Unknown error";
-        Toast.makeText(this, "Authentication failed: " + errorMsg, Toast.LENGTH_LONG).show();
-        System.out.println(errorMsg);
+        String errorMsg = "Unknown error occurred.";
+
+        // Check if the error is specifically because the user already exists
+        if (e instanceof com.google.firebase.auth.FirebaseAuthUserCollisionException) {
+            errorMsg = "An account already exists with this email address. Please log in.";
+        } else if (e != null) {
+            errorMsg = e.getMessage();
+        }
+
+        Toast.makeText(this, errorMsg, Toast.LENGTH_LONG).show();
+        System.out.println("Auth Error: " + errorMsg);
     }
 }

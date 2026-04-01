@@ -13,7 +13,20 @@
           "package_name": "com.example.ticketreservationapp"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "858478506978-3uorqbjifg7v8vdcqkfeut90lrglf32a.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ticketreservationapp",
+            "certificate_hash": "463e4be51b99644230b1fa178f1b5c3c5f385992"
+          }
+        },
+        {
+          "client_id": "858478506978-sj6o8phn70jv5dun2rkrd5tgeu7i31gp.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyAAJH4mhi4AAGE7L9LZuLCaizMG01r1l7M"
@@ -21,7 +34,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "858478506978-sj6o8phn70jv5dun2rkrd5tgeu7i31gp.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }
