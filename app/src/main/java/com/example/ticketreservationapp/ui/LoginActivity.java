@@ -12,6 +12,7 @@ import android.widget.Toast;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.lifecycle.ViewModelProvider;
 
 import com.example.ticketreservationapp.R;
 import com.example.ticketreservationapp.utils.AuthValidator;
@@ -27,25 +28,26 @@ public class LoginActivity extends AppCompatActivity {
 
     private EditText etLoginEmail, etLoginPassword, etLoginPhone;
     private FirebaseAuth mAuth;
-    private String verificationId;
+    private Button btnLogin;
+    private LoginViewModel loginViewModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_login);
 
+        loginViewModel = new ViewModelProvider(this).get(LoginViewModel.class);
+
         mAuth = FirebaseAuth.getInstance();
 
-        // Ensure testing bypass is on for the emulator
         mAuth.getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true);
 
         etLoginEmail = findViewById(R.id.etLoginEmail);
         etLoginPassword = findViewById(R.id.etLoginPassword);
 
-        // TODO: Make sure to add this ID to your activity_login.xml!
         etLoginPhone = findViewById(R.id.etLoginPhone);
 
-        Button btnLogin = findViewById(R.id.btnLogin);
+        btnLogin = findViewById(R.id.btnLogin);
         TextView tvRegisterRedirect = findViewById(R.id.tvRegisterRedirect);
 
         btnLogin.setOnClickListener(v -> loginUser());
@@ -53,29 +55,26 @@ public class LoginActivity extends AppCompatActivity {
         tvRegisterRedirect.setOnClickListener(v -> {
             Intent intent = new Intent(LoginActivity.this, RegisterActivity.class);
             startActivity(intent);
-            finish(); // Finish so they can't spam the back button between login/register
+            finish();
         });
     }
 
     private void loginUser() {
+        btnLogin.setEnabled(false);
         String email = etLoginEmail.getText().toString().trim();
         String password = etLoginPassword.getText().toString().trim();
-
-        // Handle potential NullPointerException if XML isn't updated yet
         String phone = etLoginPhone != null ? etLoginPhone.getText().toString().trim() : "";
 
-        // 1. Try Email/Password Login
         if (!TextUtils.isEmpty(email) && !TextUtils.isEmpty(password)) {
             loginWithEmail(email, password);
         }
-        // 2. Try Phone Login
         else if (!TextUtils.isEmpty(phone)) {
             String formattedPhone = AuthValidator.formatPhoneNumber(phone);
             sendPhoneVerification(formattedPhone);
         }
-        // 3. Nothing provided
         else {
             Toast.makeText(this, "Please enter Email & Password OR a Phone Number.", Toast.LENGTH_LONG).show();
+            btnLogin.setEnabled(true);
         }
     }
 
@@ -86,6 +85,7 @@ public class LoginActivity extends AppCompatActivity {
                         handleSuccessfulLogin();
                     } else {
                         showErrorMsg(task.getException());
+                        btnLogin.setEnabled(true);
                     }
                 });
     }
@@ -104,11 +104,13 @@ public class LoginActivity extends AppCompatActivity {
                     @Override
                     public void onVerificationFailed(@NonNull FirebaseException e) {
                         Toast.makeText(LoginActivity.this, "Verification Failed: " + e.getMessage(), Toast.LENGTH_LONG).show();
+                        btnLogin.setEnabled(true);
                     }
 
                     @Override
                     public void onCodeSent(@NonNull String verificationId, @NonNull PhoneAuthProvider.ForceResendingToken token) {
-                        LoginActivity.this.verificationId = verificationId;
+                        loginViewModel.setVerificationId(verificationId);
+                        btnLogin.setEnabled(true);
                         showOTPDialog();
                     }
                 }).build();
@@ -126,8 +128,13 @@ public class LoginActivity extends AppCompatActivity {
         builder.setPositiveButton("Verify", (dialog, which) -> {
             String code = input.getText().toString();
             if (!TextUtils.isEmpty(code)) {
-                PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, code);
-                signInWithPhoneAuthCredential(credential);
+                String savedVerificationId = loginViewModel.getVerificationId();
+                if (savedVerificationId != null) {
+                    PhoneAuthCredential credential = PhoneAuthProvider.getCredential(savedVerificationId, code);
+                    signInWithPhoneAuthCredential(credential);
+                } else {
+                    Toast.makeText(LoginActivity.this, "Verification ID not found.", Toast.LENGTH_LONG).show();
+                }
             }
         });
         builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
@@ -138,12 +145,9 @@ public class LoginActivity extends AppCompatActivity {
         mAuth.signInWithCredential(credential)
                 .addOnCompleteListener(this, task -> {
                     if (task.isSuccessful()) {
-                        // CRITICAL: Check if this user actually existed before today
                         boolean isNewUser = task.getResult().getAdditionalUserInfo().isNewUser();
 
                         if (isNewUser) {
-                            // They tried to login with an unregistered number!
-                            // Delete the accidental account and sign them out
                             if (mAuth.getCurrentUser() != null) {
                                 mAuth.getCurrentUser().delete();
                             }
@@ -159,18 +163,18 @@ public class LoginActivity extends AppCompatActivity {
                                     .setNegativeButton("Cancel", null)
                                     .show();
                         } else {
-                            // Normal, existing user
                             handleSuccessfulLogin();
                         }
                     } else {
                         showErrorMsg(task.getException());
+                        btnLogin.setEnabled(true);
                     }
                 });
     }
 
     private void handleSuccessfulLogin() {
         Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-        // TODO: Redirect to the Event Catalog / Main Dashboard
+        // TODO: redirect to event catalog / main dashboard
         // Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
         // startActivity(intent);
         // finish();

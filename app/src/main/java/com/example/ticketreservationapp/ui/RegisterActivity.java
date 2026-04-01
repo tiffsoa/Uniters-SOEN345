@@ -47,10 +47,9 @@ public class RegisterActivity extends AppCompatActivity {
         mAuth = FirebaseAuth.getInstance();
 
         //only disable phone verification when running app from android studio emulator
-        /* if (BuildConfig.DEBUG) {
+        if (BuildConfig.DEBUG) {
             mAuth.getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true);
-        } */
-        mAuth.getFirebaseAuthSettings().setAppVerificationDisabledForTesting(true);
+        }
 
         db = FirebaseFirestore.getInstance();
 
