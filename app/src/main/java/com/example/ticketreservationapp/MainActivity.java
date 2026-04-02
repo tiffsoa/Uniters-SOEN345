@@ -9,6 +9,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import com.example.ticketreservationapp.ui.LoginActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.example.ticketreservationapp.utils.FirestoreService;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -17,7 +18,7 @@ public class MainActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
 
         setContentView(R.layout.activity_main);
-
+        new FirestoreService().saveTestData();
         //check if user is signed in
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
