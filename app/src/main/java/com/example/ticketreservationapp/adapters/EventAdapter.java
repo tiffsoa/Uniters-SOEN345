@@ -1,0 +1,102 @@
+package com.example.ticketreservationapp.adapters;
+
+import android.view.LayoutInflater;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.TextView;
+
+import androidx.annotation.NonNull;
+import androidx.recyclerview.widget.RecyclerView;
+
+import com.example.ticketreservationapp.R;
+import com.example.ticketreservationapp.models.Event;
+
+import java.util.ArrayList;
+import java.util.List;
+
+// ---
+// RecyclerView adapter for displaying events in the Events Catalog screen
+// Updates in real-time via Firestore snapshot listener on Events collection
+// ---
+
+public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
+
+    public interface OnBookClickListener {
+        void onBookClick(Event event);
+    }
+
+    private List<Event> events = new ArrayList<>();
+    private final OnBookClickListener listener;
+
+    public EventAdapter(OnBookClickListener listener) {
+        this.listener = listener;
+    }
+
+    public void setEvents(List<Event> events) {
+        this.events = events;
+        notifyDataSetChanged();
+    }
+
+    @NonNull
+    @Override
+    public EventViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View view = LayoutInflater.from(parent.getContext())
+                .inflate(R.layout.item_event, parent, false);
+        return new EventViewHolder(view);
+    }
+
+    @Override
+    public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
+        Event event = events.get(position);
+        holder.bind(event, listener);
+    }
+
+    @Override
+    public int getItemCount() {
+        return events.size();
+    }
+
+    static class EventViewHolder extends RecyclerView.ViewHolder {
+        private final TextView tvEventName;
+        private final TextView tvEventCategory;
+        private final TextView tvEventDate;
+        private final TextView tvEventLocation;
+        private final TextView tvEventCapacity;
+        private final Button btnBookNow;
+
+        EventViewHolder(@NonNull View itemView) {
+            super(itemView);
+            tvEventName = itemView.findViewById(R.id.tvEventName);
+            tvEventCategory = itemView.findViewById(R.id.tvEventCategory);
+            tvEventDate = itemView.findViewById(R.id.tvEventDate);
+            tvEventLocation = itemView.findViewById(R.id.tvEventLocation);
+            tvEventCapacity = itemView.findViewById(R.id.tvEventCapacity);
+            btnBookNow = itemView.findViewById(R.id.btnBookNow);
+        }
+
+        void bind(Event event, OnBookClickListener listener) {
+            tvEventName.setText(event.getName());
+            tvEventCategory.setText(event.getCategory());
+            tvEventDate.setText(event.getDate());
+            tvEventLocation.setText(event.getLocation());
+
+            int remaining = event.getRemainingCapacity();
+            tvEventCapacity.setText(remaining + " / " + event.getCapacity() + " seats available");
+
+            if (remaining <= 0) {
+                btnBookNow.setEnabled(false);
+                btnBookNow.setText("Sold Out");
+            } else {
+                btnBookNow.setEnabled(true);
+                btnBookNow.setText("Book Now");
+            }
+
+            btnBookNow.setOnClickListener(v -> {
+                if (listener != null) {
+                    listener.onBookClick(event);
+                }
+            });
+        }
+    }
+}

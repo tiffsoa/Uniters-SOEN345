@@ -174,10 +174,9 @@ public class LoginActivity extends AppCompatActivity {
 
     private void handleSuccessfulLogin() {
         Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-        // TODO: redirect to event catalog / main dashboard
-        // Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
-        // startActivity(intent);
-        // finish();
+        Intent intent = new Intent(LoginActivity.this, EventsCatalogActivity.class);
+        startActivity(intent);
+        finish();
     }
 
     private void showErrorMsg(Exception e) {

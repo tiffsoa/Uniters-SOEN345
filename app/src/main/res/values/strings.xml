@@ -1,3 +1,14 @@
 <resources>
     <string name="app_name">TicketReservationApp</string>
+    <string name="events_title">Events</string>
+    <string name="my_bookings">My Bookings</string>
+    <string name="logout">Logout</string>
+    <string name="book_now">Book Now</string>
+    <string name="sold_out">Sold Out</string>
+    <string name="book_tickets">Book Tickets</string>
+    <string name="confirm_booking">Confirm Booking</string>
+    <string name="cancel_reservation">Cancel Reservation</string>
+    <string name="my_reservations">My Reservations</string>
+    <string name="no_events">No events available at this time.</string>
+    <string name="no_reservations">You have no reservations yet.</string>
 </resources>
