@@ -20,12 +20,5 @@ service cloud.firestore {
                   && resource.data.customerID == request.auth.uid;
       allow write: if false; // Only Cloud Functions (admin SDK) can write
     }
-
-    // Tickets: customers can read their own; only Cloud Functions write
-    match /Tickets/{ticketId} {
-      allow read: if request.auth != null
-                  && resource.data.customerID == request.auth.uid;
-      allow write: if false; // Only Cloud Functions (admin SDK) can write
-    }
   }
 }

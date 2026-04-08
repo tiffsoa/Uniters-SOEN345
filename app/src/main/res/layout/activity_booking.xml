@@ -70,7 +70,7 @@
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
-        <!-- Quantity selector -->
+        <!-- Ticket count dropdown -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -78,38 +78,13 @@
             android:textSize="16sp"
             android:layout_marginBottom="8dp" />
 
-        <LinearLayout
+        <Spinner
+            android:id="@+id/spinnerTicketCount"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center_vertical"
-            android:layout_marginBottom="24dp">
-
-            <Button
-                android:id="@+id/btnDecrease"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:text="-"
-                android:textSize="20sp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
-
-            <TextView
-                android:id="@+id/tvQuantity"
-                android:layout_width="80dp"
-                android:layout_height="wrap_content"
-                android:text="1"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:gravity="center" />
-
-            <Button
-                android:id="@+id/btnIncrease"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
-                android:text="+"
-                android:textSize="20sp"
-                style="@style/Widget.Material3.Button.OutlinedButton" />
-        </LinearLayout>
+            android:layout_marginBottom="24dp"
+            android:padding="8dp"
+            android:background="@android:drawable/btn_dropdown" />
 
         <!-- Confirm button -->
         <Button

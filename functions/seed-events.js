@@ -3,11 +3,11 @@
 // Usage:
 //   1. Start emulators: firebase emulators:start
 //   2. Run this script: node functions/seed-events.js
-// This creates sample events so you can test Reservations & Cancellations without depending on the Admin UI PR.
+// Creates sample events for testing reservations and cancellations without the Admin UI
 // ---
 
 const { initializeApp } = require("firebase-admin/app");
-const { getFirestore } = require("firebase-admin/firestore");
+const { getFirestore, Timestamp } = require("firebase-admin/firestore");
 
 // Point to the firestore emulator
 process.env.FIRESTORE_EMULATOR_HOST = "localhost:8080";
@@ -18,48 +18,48 @@ const db = getFirestore();
 const testEvents = [
   {
     name: "Summer Music Festival 2026",
-    date: "2026-07-15T18:00:00",
+    date: Timestamp.fromDate(new Date("2026-07-15T18:00:00")),
     location: "Montreal Olympic Stadium",
     category: "Music",
-    capacity: 500,
+    maxCapacity: 500,
     bookedSeats: 0,
-    status: "active",
+    isCancelled: false,
   },
   {
     name: "Tech Conference 2026",
-    date: "2026-08-20T09:00:00",
-    location: "Palais des congrès de Montréal",
+    date: Timestamp.fromDate(new Date("2026-08-20T09:00:00")),
+    location: "Palais des congres de Montreal",
     category: "Technology",
-    capacity: 200,
+    maxCapacity: 200,
     bookedSeats: 0,
-    status: "active",
+    isCancelled: false,
   },
   {
     name: "Basketball Championship",
-    date: "2026-09-10T19:30:00",
+    date: Timestamp.fromDate(new Date("2026-09-10T19:30:00")),
     location: "Centre Bell",
     category: "Sports",
-    capacity: 100,
+    maxCapacity: 100,
     bookedSeats: 0,
-    status: "active",
+    isCancelled: false,
   },
   {
     name: "Stand-Up Comedy Night",
-    date: "2026-06-01T20:00:00",
+    date: Timestamp.fromDate(new Date("2026-06-01T20:00:00")),
     location: "Theatre St-Denis",
     category: "Entertainment",
-    capacity: 50,
+    maxCapacity: 50,
     bookedSeats: 0,
-    status: "active",
+    isCancelled: false,
   },
   {
     name: "Almost Sold Out Show",
-    date: "2026-05-15T21:00:00",
+    date: Timestamp.fromDate(new Date("2026-05-15T21:00:00")),
     location: "Small Venue Downtown",
     category: "Music",
-    capacity: 5,
+    maxCapacity: 5,
     bookedSeats: 3,
-    status: "active",
+    isCancelled: false,
   },
 ];
 

@@ -3,8 +3,11 @@ package com.example.ticketreservationapp.ui;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.ProgressBar;
+import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -14,11 +17,13 @@ import com.example.ticketreservationapp.R;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.functions.FirebaseFunctions;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 // ---
-// Booking screen: Customer selects ticket quantity and confirms the booking
+// Booking screen: customer selects ticket count from a dropdown and confirms the booking
 // All booking logic executes server-side in the makeReservation cloud function
 // No booking logic runs on the client, only the cloud function call
 // ---
@@ -28,16 +33,17 @@ public class BookingActivity extends AppCompatActivity {
     private static final String TAG = "BookingActivity";
 
     private TextView tvEventName, tvEventDate, tvEventLocation, tvAvailableSeats;
-    private TextView tvQuantity, tvBookingResult;
-    private Button btnDecrease, btnIncrease, btnConfirmBooking;
+    private TextView tvBookingResult;
+    private Spinner spinnerTicketCount;
+    private Button btnConfirmBooking;
     private ProgressBar progressBooking;
 
     private FirebaseFunctions functions;
 
     private String eventID;
     private String eventName;
-    private int availableSeats;
-    private int quantity = 1;
+    private int remainingCapacity;
+    private int ticketCount = 1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -46,72 +52,80 @@ public class BookingActivity extends AppCompatActivity {
 
         functions = FirebaseFunctions.getInstance();
 
-        // Get event data
+        // Get event data from intent extras
         eventID = getIntent().getStringExtra("eventID");
         eventName = getIntent().getStringExtra("eventName");
         String eventDate = getIntent().getStringExtra("eventDate");
         String eventLocation = getIntent().getStringExtra("eventLocation");
-        int capacity = getIntent().getIntExtra("eventCapacity", 0);
-        int bookedSeats = getIntent().getIntExtra("eventBookedSeats", 0);
-        availableSeats = capacity - bookedSeats;
+        remainingCapacity = getIntent().getIntExtra("remainingCapacity", 0);
+        int maxCapacity = getIntent().getIntExtra("maxCapacity", 0);
 
         // Bind views
         tvEventName = findViewById(R.id.tvBookingEventName);
         tvEventDate = findViewById(R.id.tvBookingEventDate);
         tvEventLocation = findViewById(R.id.tvBookingEventLocation);
         tvAvailableSeats = findViewById(R.id.tvBookingAvailableSeats);
-        tvQuantity = findViewById(R.id.tvQuantity);
+        spinnerTicketCount = findViewById(R.id.spinnerTicketCount);
         tvBookingResult = findViewById(R.id.tvBookingResult);
-        btnDecrease = findViewById(R.id.btnDecrease);
-        btnIncrease = findViewById(R.id.btnIncrease);
         btnConfirmBooking = findViewById(R.id.btnConfirmBooking);
         progressBooking = findViewById(R.id.progressBooking);
 
         // Populate event details
         tvEventName.setText(eventName);
-        tvEventDate.setText("📅 " + eventDate);
-        tvEventLocation.setText("📍 " + eventLocation);
-        tvAvailableSeats.setText("Available: " + availableSeats + " seats");
-        tvQuantity.setText(String.valueOf(quantity));
+        tvEventDate.setText(eventDate);
+        tvEventLocation.setText(eventLocation);
+        tvAvailableSeats.setText("Available: " + remainingCapacity + " / " + maxCapacity + " seats");
 
-        // Quantity controls
-        btnDecrease.setOnClickListener(v -> {
-            if (quantity > 1) {
-                quantity--;
-                tvQuantity.setText(String.valueOf(quantity));
-            }
-        });
-
-        btnIncrease.setOnClickListener(v -> {
-            int maxQty = Math.min(availableSeats, 10);
-            if (quantity < maxQty) {
-                quantity++;
-                tvQuantity.setText(String.valueOf(quantity));
-            }
-        });
+        // Set up ticket count dropdown (1 to min(8, remainingCapacity))
+        setupTicketSpinner();
 
         // Confirm booking button calls the makeReservation cloud function
         btnConfirmBooking.setOnClickListener(v -> confirmBooking());
     }
 
+    // Populates the spinner with ticket count options from 1 to min(8, remainingCapacity)
+    private void setupTicketSpinner() {
+        int maxTickets = Math.min(8, remainingCapacity);
+        List<String> options = new ArrayList<>();
+        for (int i = 1; i <= maxTickets; i++) {
+            options.add(String.valueOf(i));
+        }
+
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
+                android.R.layout.simple_spinner_item, options);
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
+        spinnerTicketCount.setAdapter(adapter);
+
+        spinnerTicketCount.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                ticketCount = position + 1;
+            }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+                ticketCount = 1;
+            }
+        });
+    }
+
     // Calls the makeReservation cloud function
-    // All capacity checks and firestore transactions happen server-side 
-    // Disables UI during request to prevent multiple clicks
+    // All capacity checks and firestore transactions happen server-side
+    // Disables UI during the request to prevent multiple clicks
     private void confirmBooking() {
         if (FirebaseAuth.getInstance().getCurrentUser() == null) {
             Toast.makeText(this, "You must be signed in.", Toast.LENGTH_SHORT).show();
             return;
         }
-        
+
         btnConfirmBooking.setEnabled(false);
-        btnDecrease.setEnabled(false);
-        btnIncrease.setEnabled(false);
+        spinnerTicketCount.setEnabled(false);
         progressBooking.setVisibility(View.VISIBLE);
         tvBookingResult.setVisibility(View.GONE);
 
         Map<String, Object> data = new HashMap<>();
         data.put("eventID", eventID);
-        data.put("quantity", quantity);
+        data.put("ticketCount", ticketCount);
 
         functions
                 .getHttpsCallable("makeReservation")
@@ -135,8 +149,7 @@ public class BookingActivity extends AppCompatActivity {
                 .addOnFailureListener(e -> {
                     progressBooking.setVisibility(View.GONE);
                     btnConfirmBooking.setEnabled(true);
-                    btnDecrease.setEnabled(true);
-                    btnIncrease.setEnabled(true);
+                    spinnerTicketCount.setEnabled(true);
 
                     String errorMsg = e.getMessage();
                     tvBookingResult.setText(errorMsg);

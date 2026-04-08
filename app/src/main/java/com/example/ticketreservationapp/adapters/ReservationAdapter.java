@@ -11,14 +11,18 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ticketreservationapp.R;
+import com.example.ticketreservationapp.models.Event;
 import com.example.ticketreservationapp.models.Reservation;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 // ---
 // RecyclerView adapter for displaying customer reservations in MyReservationsActivity
-// Updates in real-time via firestore snapshot listener on Reservations collection filtered by customerID
+// Event details (name, date, location) are resolved from a Map<eventID, Event> passed by the activity
+// Shows both active and cancelled reservations with visual distinction
 // ---
 
 public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.ReservationViewHolder> {
@@ -28,14 +32,17 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
     }
 
     private List<Reservation> reservations = new ArrayList<>();
+    private Map<String, Event> eventMap = new HashMap<>();
     private final OnCancelClickListener listener;
 
     public ReservationAdapter(OnCancelClickListener listener) {
         this.listener = listener;
     }
 
-    public void setReservations(List<Reservation> reservations) {
+    // Updates the adapter with reservation list and corresponding event details
+    public void setData(List<Reservation> reservations, Map<String, Event> eventMap) {
         this.reservations = reservations;
+        this.eventMap = eventMap;
         notifyDataSetChanged();
     }
 
@@ -50,7 +57,7 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
     @Override
     public void onBindViewHolder(@NonNull ReservationViewHolder holder, int position) {
         Reservation reservation = reservations.get(position);
-        holder.bind(reservation, listener);
+        holder.bind(reservation, eventMap, listener);
     }
 
     @Override
@@ -78,23 +85,34 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
             btnCancelReservation = itemView.findViewById(R.id.btnCancelReservation);
         }
 
-        void bind(Reservation reservation, OnCancelClickListener listener) {
-            tvResEventName.setText(reservation.getEventName());
-            tvResEventDate.setText("📅 " + reservation.getEventDate());
-            tvResEventLocation.setText("📍 " + reservation.getEventLocation());
-            tvResTicketCount.setText("🎟 Tickets: " + reservation.getQuantity());
+        void bind(Reservation reservation, Map<String, Event> eventMap, OnCancelClickListener listener) {
+            // Resolve event details from the event map using eventID
+            Event event = eventMap.get(reservation.getEventID());
+            if (event != null) {
+                tvResEventName.setText(event.getName());
+                tvResEventDate.setText(event.getFormattedDate());
+                tvResEventLocation.setText(event.getLocation());
+            } else {
+                tvResEventName.setText("Unknown Event");
+                tvResEventDate.setText("");
+                tvResEventLocation.setText("");
+            }
+
+            tvResTicketCount.setText("Tickets: " + reservation.getTicketCount());
             tvResID.setText("ID: " + reservation.getReservationID());
 
-            if (reservation.isConfirmed()) {
-                tvResStatus.setText("CONFIRMED");
-                tvResStatus.setTextColor(Color.parseColor("#2E7D32")); // green
-                btnCancelReservation.setEnabled(true);
-                btnCancelReservation.setVisibility(View.VISIBLE);
-            } else {
-                tvResStatus.setText("CANCELED");
-                tvResStatus.setTextColor(Color.parseColor("#C62828")); // red
+            if (reservation.isIsCancelled()) {
+                tvResStatus.setText("CANCELLED");
+                tvResStatus.setTextColor(Color.parseColor("#C62828"));
                 btnCancelReservation.setEnabled(false);
                 btnCancelReservation.setVisibility(View.GONE);
+                itemView.setAlpha(0.6f);
+            } else {
+                tvResStatus.setText("CONFIRMED");
+                tvResStatus.setTextColor(Color.parseColor("#2E7D32"));
+                btnCancelReservation.setEnabled(true);
+                btnCancelReservation.setVisibility(View.VISIBLE);
+                itemView.setAlpha(1.0f);
             }
 
             btnCancelReservation.setOnClickListener(v -> {

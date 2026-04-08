@@ -1,5 +1,6 @@
 package com.example.ticketreservationapp.adapters;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -17,7 +18,8 @@ import java.util.List;
 
 // ---
 // RecyclerView adapter for displaying events in the Events Catalog screen
-// Updates in real-time via Firestore snapshot listener on Events collection
+// Shows all events including cancelled ones (cancelled events are greyed out with booking disabled)
+// Updates in real-time via firestore snapshot listener on Events collection
 // ---
 
 public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHolder> {
@@ -63,6 +65,7 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
         private final TextView tvEventDate;
         private final TextView tvEventLocation;
         private final TextView tvEventCapacity;
+        private final TextView tvEventStatus;
         private final Button btnBookNow;
 
         EventViewHolder(@NonNull View itemView) {
@@ -72,24 +75,34 @@ public class EventAdapter extends RecyclerView.Adapter<EventAdapter.EventViewHol
             tvEventDate = itemView.findViewById(R.id.tvEventDate);
             tvEventLocation = itemView.findViewById(R.id.tvEventLocation);
             tvEventCapacity = itemView.findViewById(R.id.tvEventCapacity);
+            tvEventStatus = itemView.findViewById(R.id.tvEventStatus);
             btnBookNow = itemView.findViewById(R.id.btnBookNow);
         }
 
         void bind(Event event, OnBookClickListener listener) {
             tvEventName.setText(event.getName());
             tvEventCategory.setText(event.getCategory());
-            tvEventDate.setText(event.getDate());
+            tvEventDate.setText(event.getFormattedDate());
             tvEventLocation.setText(event.getLocation());
+            tvEventCapacity.setText(event.getRemainingCapacity() + " / " + event.getMaxCapacity() + " seats available");
 
-            int remaining = event.getRemainingCapacity();
-            tvEventCapacity.setText(remaining + " / " + event.getCapacity() + " seats available");
-
-            if (remaining <= 0) {
+            if (event.isIsCancelled()) {
+                tvEventStatus.setVisibility(View.VISIBLE);
+                tvEventStatus.setText("CANCELLED");
+                tvEventStatus.setTextColor(Color.parseColor("#C62828"));
+                btnBookNow.setEnabled(false);
+                btnBookNow.setText("Unavailable");
+                itemView.setAlpha(0.6f);
+            } else if (event.getRemainingCapacity() <= 0) {
+                tvEventStatus.setVisibility(View.GONE);
                 btnBookNow.setEnabled(false);
                 btnBookNow.setText("Sold Out");
+                itemView.setAlpha(1.0f);
             } else {
+                tvEventStatus.setVisibility(View.GONE);
                 btnBookNow.setEnabled(true);
                 btnBookNow.setText("Book Now");
+                itemView.setAlpha(1.0f);
             }
 
             btnBookNow.setOnClickListener(v -> {

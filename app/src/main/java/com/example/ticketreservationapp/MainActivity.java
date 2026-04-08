@@ -11,15 +11,21 @@ import com.example.ticketreservationapp.ui.LoginActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 
+// ---
+// App entry point: checks if user is signed in and redirects accordingly
+// If signed in, routes to EventsCatalogActivity
+// If not signed in, routes to LoginActivity
+// ---
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        setContentView(R.layout.activity_main);
+        // Skip setContentView since we redirect immediately based on auth state
 
-        //check if user is signed in
+        // Check if user is signed in
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
         if (currentUser != null) {

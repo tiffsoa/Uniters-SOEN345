@@ -1,6 +1,5 @@
 package com.example.ticketreservationapp.ui;
 
-import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -16,6 +15,7 @@ import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ticketreservationapp.R;
 import com.example.ticketreservationapp.adapters.ReservationAdapter;
+import com.example.ticketreservationapp.models.Event;
 import com.example.ticketreservationapp.models.Reservation;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -28,12 +28,15 @@ import com.google.firebase.functions.FirebaseFunctions;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 // ---
 // Displays the customer's reservations with real-time updates
 // Uses firestore snapshot listener on Reservations collection filtered by customerID
+// Event details are fetched separately using eventIDs from the reservations
 // Cancellation is handled by calling the cancelReservation cloud function
 // ---
 
@@ -49,6 +52,9 @@ public class MyReservationsActivity extends AppCompatActivity implements Reserva
     private FirebaseFirestore db;
     private FirebaseFunctions functions;
     private ListenerRegistration reservationsListener;
+
+    // Cached event details keyed by eventID for displaying in reservation cards
+    private Map<String, Event> eventMap = new HashMap<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -78,6 +84,7 @@ public class MyReservationsActivity extends AppCompatActivity implements Reserva
 
     // Attaches a real-time snapshot listener to Reservations collection
     // Filtered by the current customer's UID and ordered by creation time
+    // After loading reservations, fetches corresponding event details
     private void startReservationsListener() {
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
         if (currentUser == null) {
@@ -105,7 +112,7 @@ public class MyReservationsActivity extends AppCompatActivity implements Reserva
                     if (snapshots == null || snapshots.isEmpty()) {
                         tvNoReservations.setVisibility(View.VISIBLE);
                         rvReservations.setVisibility(View.GONE);
-                        reservationAdapter.setReservations(new ArrayList<>());
+                        reservationAdapter.setData(new ArrayList<>(), new HashMap<>());
                         return;
                     }
 
@@ -120,19 +127,69 @@ public class MyReservationsActivity extends AppCompatActivity implements Reserva
 
                     tvNoReservations.setVisibility(reservations.isEmpty() ? View.VISIBLE : View.GONE);
                     rvReservations.setVisibility(reservations.isEmpty() ? View.GONE : View.VISIBLE);
-                    reservationAdapter.setReservations(reservations);
+
+                    // Fetch event details for all reservations then update adapter
+                    fetchEventsForReservations(reservations);
 
                     Log.d(TAG, "Loaded " + reservations.size() + " reservations (real-time)");
                 });
     }
 
+    // Fetches event documents for all unique eventIDs in the reservations list
+    // Uses individual document gets and aggregates results into an event map
+    private void fetchEventsForReservations(List<Reservation> reservations) {
+        Set<String> eventIDs = new HashSet<>();
+        for (Reservation r : reservations) {
+            if (r.getEventID() != null) {
+                eventIDs.add(r.getEventID());
+            }
+        }
+
+        if (eventIDs.isEmpty()) {
+            reservationAdapter.setData(reservations, new HashMap<>());
+            return;
+        }
+
+        Map<String, Event> newEventMap = new HashMap<>();
+        final int[] remaining = {eventIDs.size()};
+
+        for (String eventID : eventIDs) {
+            db.collection("Events").document(eventID).get()
+                    .addOnSuccessListener(doc -> {
+                        if (doc.exists()) {
+                            Event event = doc.toObject(Event.class);
+                            if (event != null) {
+                                event.setEventID(doc.getId());
+                                newEventMap.put(doc.getId(), event);
+                            }
+                        }
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            eventMap = newEventMap;
+                            reservationAdapter.setData(reservations, eventMap);
+                        }
+                    })
+                    .addOnFailureListener(err -> {
+                        Log.e(TAG, "Error fetching event " + eventID, err);
+                        remaining[0]--;
+                        if (remaining[0] == 0) {
+                            eventMap = newEventMap;
+                            reservationAdapter.setData(reservations, eventMap);
+                        }
+                    });
+        }
+    }
+
     @Override
     public void onCancelClick(Reservation reservation) {
-        // Show confirmation dialog before cancellation
+        // Get event name from cached event map for the confirmation dialog
+        Event event = eventMap.get(reservation.getEventID());
+        String eventName = event != null ? event.getName() : "this event";
+
         new AlertDialog.Builder(this)
                 .setTitle("Cancel Reservation")
                 .setMessage("Are you sure you want to cancel your reservation for "
-                        + reservation.getEventName() + " (" + reservation.getQuantity() + " ticket(s))?")
+                        + eventName + " (" + reservation.getTicketCount() + " ticket(s))?")
                 .setPositiveButton("Yes, Cancel", (dialog, which) -> {
                     performCancellation(reservation);
                 })
@@ -140,8 +197,8 @@ public class MyReservationsActivity extends AppCompatActivity implements Reserva
                 .show();
     }
 
-    // Calls the cancelReservation cloud function 
-    // All cancellation logic (marking reservation/tickets as canceled, decrementing capacity) happens server-side
+    // Calls the cancelReservation cloud function
+    // All cancellation logic (marking reservation as cancelled, returning capacity) happens server-side
     private void performCancellation(Reservation reservation) {
         progressReservations.setVisibility(View.VISIBLE);
 

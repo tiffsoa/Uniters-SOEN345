@@ -78,13 +78,12 @@ public class EventsCatalogActivity extends AppCompatActivity implements EventAda
     }
 
     // Attaches a real-time snapshot listener to the Events collection
-    // Only shows active events (status == "active")
+    // Shows all events including cancelled ones
     private void startEventsListener() {
         progressBar.setVisibility(View.VISIBLE);
         tvEmptyState.setVisibility(View.GONE);
 
         eventsListener = db.collection("Events")
-                .whereEqualTo("status", "active")
                 .addSnapshotListener((QuerySnapshot snapshots, com.google.firebase.firestore.FirebaseFirestoreException e) -> {
                     progressBar.setVisibility(View.GONE);
 
@@ -123,10 +122,10 @@ public class EventsCatalogActivity extends AppCompatActivity implements EventAda
         Intent intent = new Intent(this, BookingActivity.class);
         intent.putExtra("eventID", event.getEventID());
         intent.putExtra("eventName", event.getName());
-        intent.putExtra("eventDate", event.getDate());
+        intent.putExtra("eventDate", event.getFormattedDate());
         intent.putExtra("eventLocation", event.getLocation());
-        intent.putExtra("eventCapacity", event.getCapacity());
-        intent.putExtra("eventBookedSeats", event.getBookedSeats());
+        intent.putExtra("remainingCapacity", event.getRemainingCapacity());
+        intent.putExtra("maxCapacity", event.getMaxCapacity());
         startActivity(intent);
     }
 
