@@ -23,7 +23,9 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
 
-        // Skip setContentView since we redirect immediately based on auth state
+        // Old PR: setContentView(R.layout.activity_main);
+
+        // New PR: Skip setContentView since we redirect immediately based on auth state
 
         // Check if user is signed in
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
