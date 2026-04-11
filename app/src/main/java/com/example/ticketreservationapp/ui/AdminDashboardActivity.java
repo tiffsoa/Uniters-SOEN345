@@ -12,7 +12,6 @@ import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ticketreservationapp.R;
-import com.example.ticketreservationapp.models.Administrator;
 import com.example.ticketreservationapp.models.Event;
 import com.google.firebase.firestore.CollectionReference;
 import com.google.firebase.firestore.DocumentSnapshot;
@@ -37,9 +36,8 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private FirebaseFirestore db;
     private CollectionReference eventsRef;
     private ListenerRegistration eventsListener;
-
-    private Administrator administrator;
     private Event selectedEvent;
+    private List<Event> currentEventList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -61,15 +59,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         adapter = new AdminEventAdapter();
         rvEvents.setAdapter(adapter);
 
-        // Initialize the Administrator object
-        administrator = new Administrator("adminId", "admin@example.com", "1234567890");
-
         db = FirebaseFirestore.getInstance();
         eventsRef = db.collection("Events");
 
         // Set up listener for when an event is selected
         adapter.setOnItemClickListener(event -> {
-            selectedEvent = administrator.getEvent(event.getEventID());
+            selectedEvent = event;
             populateFields(event);
         });
 
@@ -112,11 +107,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
             return null;
         }
 
-        Date eventDate = null;
+        Date eventDate;
         try {
             eventDate = new SimpleDateFormat("dd/MM/yyyy").parse(eventDateStr);
         } catch (Exception e) {
             Toast.makeText(this, "Invalid date format", Toast.LENGTH_SHORT).show();
+            return null;
         }
 
         return new Event(eventId, name, eventDate, location, category, capacity);
@@ -128,8 +124,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
             // Add event to Firestore
             eventsRef.document(event.getEventID()).set(event)
                     .addOnSuccessListener(aVoid -> {
-                        // Add event to local catalog using Administrator
-                        administrator.addEvent(event);
                         Toast.makeText(this, "Event Added", Toast.LENGTH_SHORT).show();
                         clearFields();
                     })
@@ -141,9 +135,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
         if (selectedEvent != null) {
             Event updatedEvent = buildEventFromInput(selectedEvent.getEventID());
             if (updatedEvent != null) {
-
-                updatedEvent.setEventID(selectedEvent.getEventID());
-
                 eventsRef.document(selectedEvent.getEventID())
                         .update(
                                 "name", updatedEvent.getName(),
@@ -153,7 +144,6 @@ public class AdminDashboardActivity extends AppCompatActivity {
                                 "capacity", updatedEvent.getCapacity()
                         )
                         .addOnSuccessListener(aVoid -> {
-                            administrator.editEvent(updatedEvent);
                             Toast.makeText(this, "Event Updated", Toast.LENGTH_SHORT).show();
                             clearFields();
                         })
@@ -168,9 +158,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     private void cancelEvent() {
         if (selectedEvent != null) {
-            // Mark the event as canceled
-            administrator.cancelEvent(selectedEvent);
-
+            selectedEvent.setCancelled(true);
             // Update Firestore to reflect the cancellation
             eventsRef.document(selectedEvent.getEventID())
                     .set(selectedEvent)
@@ -190,6 +178,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         etCategory.setText("");
         etCapacity.setText("");
         etEventDate.setText("");
+        selectedEvent = null;
     }
 
     private void showDatePicker() {
@@ -228,7 +217,16 @@ public class AdminDashboardActivity extends AppCompatActivity {
                     if (e != null) eventList.add(e);
                 }
             }
+
+            currentEventList = eventList;
             adapter.setEvents(eventList);
+            if (selectedEvent != null) {
+                String selectedId = selectedEvent.getEventID();
+                selectedEvent = eventList.stream()
+                        .filter(e -> e.getEventID().equals(selectedId))
+                        .findFirst()
+                        .orElse(null);
+            }
         });
     }
 

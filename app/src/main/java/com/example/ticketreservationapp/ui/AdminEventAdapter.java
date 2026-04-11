@@ -46,12 +46,6 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Ev
         holder.tvEventID.setText("Event ID: " + event.getEventID());
         holder.tvCancelled.setVisibility(event.isCancelled() ? View.VISIBLE : View.GONE);
 
-        if (event.isCancelled()) {
-            holder.tvCancelled.setVisibility(View.VISIBLE);  // Show the "Cancelled" label if the event is cancelled
-        } else {
-            holder.tvCancelled.setVisibility(View.GONE);
-        }
-
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
                 listener.onItemClick(event);
