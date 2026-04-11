@@ -2,51 +2,188 @@ package com.example.ticketreservationapp.ui;
 
 import android.app.DatePickerDialog;
 import android.os.Bundle;
-import android.text.TextUtils;
 import android.view.View;
-import android.widget.Button;
-import android.widget.EditText;
-import android.widget.LinearLayout;
-import android.widget.Toast;
+import android.widget.*;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
 import com.example.ticketreservationapp.R;
+import com.example.ticketreservationapp.data.EventRepository;
+import com.example.ticketreservationapp.domain.EventService;
 import com.example.ticketreservationapp.models.Event;
-import com.google.firebase.firestore.CollectionReference;
-import com.google.firebase.firestore.DocumentSnapshot;
-import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.ListenerRegistration;
+import com.example.ticketreservationapp.utils.InputValidator;
+import com.google.firebase.firestore.*;
 
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.UUID;
+import java.util.*;
 
+//removed anything other than interaction, it is onlky a UI layer
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private EditText etName, etLocation, etCategory, etCapacity, etEventDate;
     private LinearLayout formContainer;
     private Button btnOpenAddForm, btnSaveEvent, btnCloseForm, btnCancel;
     private RecyclerView rvEvents;
+
     private AdminEventAdapter adapter;
 
     private FirebaseFirestore db;
     private CollectionReference eventsRef;
-    private ListenerRegistration eventsListener;
+    private EventRepository repository;
+    private EventService service;
+
     private Event selectedEvent;
-    private boolean isEditMode = false;
-    private List<Event> currentEventList = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_admin_dashboard);
 
+        service = new EventService();
+        db = FirebaseFirestore.getInstance();
+        eventsRef = db.collection("Events");
+        repository = new EventRepository(eventsRef);
+
+        bindViews();
+        setupRecycler();
+        setupListeners();
+        listenToEvents();
+    }
+
+    private void setupListeners() {
+
+        btnOpenAddForm.setOnClickListener(v -> {
+            selectedEvent = null;
+            clearFields();
+            showForm();
+        });
+
+        btnSaveEvent.setOnClickListener(v -> {
+            try {
+                InputValidator.validate(
+                        etName.getText().toString(),
+                        etLocation.getText().toString(),
+                        etCategory.getText().toString(),
+                        etCapacity.getText().toString(),
+                        etEventDate.getText().toString()
+                );
+                Event event;
+                if (selectedEvent == null) {
+                    event = service.createEvent(
+                            etName.getText().toString(),
+                            etLocation.getText().toString(),
+                            etCategory.getText().toString(),
+                            etCapacity.getText().toString(),
+                            etEventDate.getText().toString()
+                    );
+                } else {
+                    event = service.updateEvent(
+                            selectedEvent,
+                            etName.getText().toString(),
+                            etLocation.getText().toString(),
+                            etCategory.getText().toString(),
+                            etCapacity.getText().toString(),
+                            etEventDate.getText().toString()
+                    );
+                }
+
+                if (selectedEvent == null) {
+                    repository.create(event,
+                            () -> Toast.makeText(this, "Event Created", Toast.LENGTH_SHORT).show(),
+                            msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                    );
+                } else {
+                    repository.update(event,
+                            () -> Toast.makeText(this, "Event Updated", Toast.LENGTH_SHORT).show(),
+                            msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+                    );
+                }
+
+                hideForm();
+
+            } catch (Exception e) {
+                Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            }
+        });
+
+        btnCancel.setOnClickListener(v -> {
+            if (selectedEvent == null) return;
+
+            service.cancel(selectedEvent);
+
+            repository.cancel(selectedEvent,
+                    () -> Toast.makeText(this, "Event Canceled", Toast.LENGTH_SHORT).show(),
+                    msg -> Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
+            );
+
+            hideForm();
+        });
+
+        btnCloseForm.setOnClickListener(v -> hideForm());
+
+        etEventDate.setOnClickListener(v -> showDatePicker());
+    }
+
+    private void listenToEvents() {
+        eventsRef.addSnapshotListener((value, error) -> {
+
+            List<Event> list = new ArrayList<>();
+
+            if (value != null) {
+                for (DocumentSnapshot doc : value.getDocuments()) {
+                    Event e = doc.toObject(Event.class);
+                    if (e != null) list.add(e);
+                }
+            }
+
+            adapter.setEvents(list);
+        });
+    }
+
+    private void setupRecycler() {
+        rvEvents.setLayoutManager(new LinearLayoutManager(this));
+        adapter = new AdminEventAdapter();
+
+        adapter.setOnItemClickListener(event -> {
+            selectedEvent = event;
+            populateFields(event);
+            showForm();
+        });
+
+        rvEvents.setAdapter(adapter);
+    }
+
+    private void populateFields(Event e) {
+        etName.setText(e.getName());
+        etLocation.setText(e.getLocation());
+        etCategory.setText(e.getCategory());
+        etCapacity.setText(String.valueOf(e.getCapacity()));
+        etEventDate.setText(new SimpleDateFormat("dd/MM/yyyy").format(e.getDate()));
+    }
+
+    private void clearFields() {
+        etName.setText("");
+        etLocation.setText("");
+        etCategory.setText("");
+        etCapacity.setText("");
+        etEventDate.setText("");
+    }
+
+    private void showForm() {
+        formContainer.setVisibility(View.VISIBLE);
+        btnOpenAddForm.setVisibility(View.GONE);
+    }
+
+    private void hideForm() {
+        formContainer.setVisibility(View.GONE);
+        btnOpenAddForm.setVisibility(View.VISIBLE);
+        clearFields();
+        selectedEvent = null;
+    }
+
+    private void bindViews() {
         etName = findViewById(R.id.etEventName);
         etLocation = findViewById(R.id.etEventLocation);
         etCategory = findViewById(R.id.etEventCategory);
@@ -58,233 +195,17 @@ public class AdminDashboardActivity extends AppCompatActivity {
         btnSaveEvent = findViewById(R.id.btnSaveEvent);
         btnCloseForm = findViewById(R.id.btnCloseForm);
         btnCancel = findViewById(R.id.btnCancelEvent);
-
-
         rvEvents = findViewById(R.id.rvEvents);
-        rvEvents.setLayoutManager(new LinearLayoutManager(this));
-        adapter = new AdminEventAdapter();
-        rvEvents.setAdapter(adapter);
-
-        db = FirebaseFirestore.getInstance();
-        eventsRef = db.collection("Events");
-
-        // Set up listener for when an event is selected
-        adapter.setOnItemClickListener(event -> {
-            selectedEvent = event;
-            populateFields(event);
-            formContainer.setVisibility(View.VISIBLE);
-            setMode(true);
-        });
-
-        btnOpenAddForm.setOnClickListener(v -> {
-            selectedEvent = null;
-            clearFields();
-            formContainer.setVisibility(View.VISIBLE);
-            setMode(true);
-        });
-
-        btnSaveEvent.setOnClickListener(v -> {
-            if (selectedEvent != null) {
-                editEvent();
-            } else {
-                addEvent();
-            }
-            formContainer.setVisibility(View.GONE);
-            setMode(false);
-        });
-
-        btnCancel.setOnClickListener(v -> {
-            if (selectedEvent != null) {
-                cancelEvent();
-                formContainer.setVisibility(View.GONE);
-                setMode(false);
-            } else {
-                Toast.makeText(this, "Select an event first", Toast.LENGTH_SHORT).show();
-            }
-        });
-
-        // Listen for events in Firestore
-        listenToEvents();
-
-        btnCloseForm.setOnClickListener(v -> {
-            formContainer.setVisibility(View.GONE);
-            clearFields();
-            selectedEvent = null;
-            setMode(false);
-        });
-
-        etEventDate.setOnClickListener(v -> showDatePicker());
-    }
-
-    private void populateFields(Event event) {
-        etName.setText(event.getName());
-        etLocation.setText(event.getLocation());
-        etCategory.setText(event.getCategory());
-        etCapacity.setText(String.valueOf(event.getCapacity()));
-        etEventDate.setText(new SimpleDateFormat("dd/MM/yyyy").format(event.getDate()));
-    }
-
-    private Event buildEventFromInput(String eventId) {
-        String name = etName.getText().toString().trim();
-        String location = etLocation.getText().toString().trim();
-        String category = etCategory.getText().toString().trim();
-        String capacityStr = etCapacity.getText().toString().trim();
-        String eventDateStr = etEventDate.getText().toString().trim();
-
-        if (TextUtils.isEmpty(name) || TextUtils.isEmpty(location) ||
-                TextUtils.isEmpty(category) || TextUtils.isEmpty(capacityStr) || TextUtils.isEmpty(eventDateStr)) {
-            Toast.makeText(this, "Please fill all fields", Toast.LENGTH_SHORT).show();
-            return null;
-        }
-
-        int capacity;
-        try {
-            capacity = Integer.parseInt(capacityStr);
-        } catch (NumberFormatException e) {
-            Toast.makeText(this, "Capacity must be a number", Toast.LENGTH_SHORT).show();
-            return null;
-        }
-
-        Date eventDate;
-        try {
-            eventDate = new SimpleDateFormat("dd/MM/yyyy").parse(eventDateStr);
-        } catch (Exception e) {
-            Toast.makeText(this, "Invalid date format", Toast.LENGTH_SHORT).show();
-            return null;
-        }
-
-        if (eventDate.before(new Date())) {
-            Toast.makeText(this, "Event date cannot be in the past", Toast.LENGTH_SHORT).show();
-            return null;
-        }
-
-        try {
-            return new Event(eventId, name, eventDate, location, category, capacity);
-        } catch (IllegalArgumentException e) {
-            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
-            return null;
-        }
-    }
-
-    private void addEvent() {
-        Event event = buildEventFromInput(UUID.randomUUID().toString());
-        if (event != null) {
-            // Add event to Firestore
-            eventsRef.document(event.getEventID()).set(event)
-                    .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Event Added", Toast.LENGTH_SHORT).show();
-                        clearFields();
-                    })
-                    .addOnFailureListener(e -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-        }
-    }
-
-    private void editEvent() {
-        if (selectedEvent != null) {
-            Event updatedEvent = buildEventFromInput(selectedEvent.getEventID());
-            if (updatedEvent != null) {
-                eventsRef.document(selectedEvent.getEventID())
-                        .set(updatedEvent)
-                        .addOnSuccessListener(aVoid -> {
-                            Toast.makeText(this, "Event Updated", Toast.LENGTH_SHORT).show();
-                            clearFields();
-                        })
-                        .addOnFailureListener(e ->
-                                Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show()
-                        );
-            }
-        } else {
-            Toast.makeText(this, "Please select an event to edit", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void cancelEvent() {
-        if (selectedEvent != null) {
-            selectedEvent.setCancelled(true);
-            // Update Firestore to reflect the cancellation
-            eventsRef.document(selectedEvent.getEventID())
-                    .set(selectedEvent)
-                    .addOnSuccessListener(aVoid -> {
-                        Toast.makeText(this, "Event Canceled", Toast.LENGTH_SHORT).show();
-                        clearFields();
-                    })
-                    .addOnFailureListener(e -> Toast.makeText(this, "Error: " + e.getMessage(), Toast.LENGTH_SHORT).show());
-        } else {
-            Toast.makeText(this, "Please select an event to cancel", Toast.LENGTH_SHORT).show();
-        }
-    }
-
-    private void clearFields() {
-        etName.setText("");
-        etLocation.setText("");
-        etCategory.setText("");
-        etCapacity.setText("");
-        etEventDate.setText("");
-        selectedEvent = null;
     }
 
     private void showDatePicker() {
-        Calendar calendar = Calendar.getInstance();
-        int year = calendar.get(Calendar.YEAR);
-        int month = calendar.get(Calendar.MONTH);
-        int day = calendar.get(Calendar.DAY_OF_MONTH);
+        Calendar c = Calendar.getInstance();
 
-        DatePickerDialog datePickerDialog = new DatePickerDialog(
-                this,
-                android.R.style.Theme_Holo_Light_Dialog,
-                (view, year1, monthOfYear, dayOfMonth) -> {
-                    String dateString = (dayOfMonth < 10 ? "0" + dayOfMonth : dayOfMonth) + "/"
-                            + (monthOfYear + 1 < 10 ? "0" + (monthOfYear + 1) : (monthOfYear + 1)) + "/"
-                            + year1;
-                    etEventDate.setText(dateString);
-                },
-                year,
-                month,
-                day
-        );
-        datePickerDialog.show();
-    }
-
-    private void listenToEvents() {
-        eventsListener = eventsRef.addSnapshotListener((value, error) -> {
-            if (error != null) {
-                Toast.makeText(this, "Error loading events: " + error.getMessage(), Toast.LENGTH_SHORT).show();
-                return;
-            }
-
-            List<Event> eventList = new ArrayList<>();
-            if (value != null && !value.isEmpty()) {
-                for (DocumentSnapshot doc : value.getDocuments()) {
-                    Event e = doc.toObject(Event.class);
-                    if (e != null) {
-                        if (e.getBookedSeats() < 0) {
-                            e.setBookedSeats(0);
-                        }
-                        eventList.add(e);
-                    }
-                }
-            }
-
-            currentEventList = eventList;
-            adapter.setEvents(eventList);
-            if (selectedEvent != null) {
-                String selectedId = selectedEvent.getEventID();
-                selectedEvent = eventList.stream()
-                        .filter(e -> e.getEventID().equals(selectedId))
-                        .findFirst()
-                        .orElse(null);
-            }
-        });
-    }
-
-    private void setMode(boolean editMode) {
-        isEditMode = editMode;
-        btnOpenAddForm.setVisibility(editMode ? View.GONE : View.VISIBLE);
-    }
-
-    @Override
-    protected void onDestroy() {
-        super.onDestroy();
-        if (eventsListener != null) eventsListener.remove();
+        new DatePickerDialog(this,
+                (v, y, m, d) -> etEventDate.setText(d + "/" + (m + 1) + "/" + y),
+                c.get(Calendar.YEAR),
+                c.get(Calendar.MONTH),
+                c.get(Calendar.DAY_OF_MONTH)
+        ).show();
     }
 }

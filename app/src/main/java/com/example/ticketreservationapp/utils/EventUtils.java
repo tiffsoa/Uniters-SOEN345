@@ -8,6 +8,31 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class EventUtils {
+    //moved domain validation in the event utils
+    public static void validateEvent(Event event) {
+
+        if (event == null)
+            throw new IllegalArgumentException("Event cannot be null");
+
+        if (event.getName() == null || event.getName().trim().isEmpty())
+            throw new IllegalArgumentException("Name cannot be empty");
+
+        if (event.getLocation() == null || event.getLocation().trim().isEmpty())
+            throw new IllegalArgumentException("Location cannot be empty");
+
+        if (event.getCategory() == null || event.getCategory().trim().isEmpty())
+            throw new IllegalArgumentException("Category cannot be empty");
+
+        if (event.getCapacity() <= 0)
+            throw new IllegalArgumentException("Capacity must be > 0");
+
+        if (event.getDate() == null || event.getDate().before(new Date()))
+            throw new IllegalArgumentException("Event date cannot be in past");
+    }
+
+    public static void cancelEvent(Event event) {
+        event.setCancelled(true);
+    }
 
     public static List<Event> filter(List<Event> events, Date date, String location, String category) {
         return events.stream()
