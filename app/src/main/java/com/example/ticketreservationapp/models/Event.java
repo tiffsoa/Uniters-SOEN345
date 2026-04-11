@@ -3,7 +3,7 @@ package com.example.ticketreservationapp.models;
 import java.util.Date;
 
 public class Event {
-    private final String eventID;
+    private String eventID;
     private String name;
     private Date date;
     private String location;
@@ -11,6 +11,8 @@ public class Event {
     private int capacity;
     private int bookedSeats;
     private boolean isCancelled;
+
+    public Event() {}
 
     public Event(String eventID, String name, Date date, String location, String category, int capacity) {
         this.eventID = eventID;
@@ -72,20 +74,5 @@ public class Event {
             throw new IllegalStateException("Cannot modify cancelled event");
         }
         isCancelled = cancelled;
-    }
-
-    // Cancel method that marks the event as canceled
-    public void cancel() {
-        if (isCancelled) {
-            throw new IllegalStateException("Event is already cancelled");
-        }
-        this.isCancelled = true;
-    }
-    public void updateDetails(String name, Date date, String location, int capacity, int bookedSeats) {
-        setName(name);
-        setDate(date);
-        setLocation(location);
-        setCapacity(capacity);
-        setBookedSeats(bookedSeats);
     }
 }

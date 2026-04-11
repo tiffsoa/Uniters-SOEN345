@@ -115,7 +115,17 @@ public class AdminDashboardActivity extends AppCompatActivity {
             return null;
         }
 
-        return new Event(eventId, name, eventDate, location, category, capacity);
+        if (eventDate.before(new Date())) {
+            Toast.makeText(this, "Event date cannot be in the past", Toast.LENGTH_SHORT).show();
+            return null;
+        }
+
+        try {
+            return new Event(eventId, name, eventDate, location, category, capacity);
+        } catch (IllegalArgumentException e) {
+            Toast.makeText(this, e.getMessage(), Toast.LENGTH_SHORT).show();
+            return null;
+        }
     }
 
     private void addEvent() {
