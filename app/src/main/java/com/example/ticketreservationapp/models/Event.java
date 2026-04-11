@@ -66,8 +66,6 @@ public class Event {
         }
         this.bookedSeats = bookedSeats;
     }
-    public int getRemainingCapacity() { return capacity - bookedSeats; }
-
     public boolean isCancelled() { return isCancelled; }
     public void setCancelled(boolean cancelled) {
         if (isCancelled) {

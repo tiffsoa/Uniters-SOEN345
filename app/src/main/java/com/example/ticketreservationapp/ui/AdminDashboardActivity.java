@@ -3,8 +3,10 @@ package com.example.ticketreservationapp.ui;
 import android.app.DatePickerDialog;
 import android.os.Bundle;
 import android.text.TextUtils;
+import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
@@ -28,8 +30,8 @@ import java.util.UUID;
 public class AdminDashboardActivity extends AppCompatActivity {
 
     private EditText etName, etLocation, etCategory, etCapacity, etEventDate;
-    private Button btnAdd, btnEdit, btnCancel;
-
+    private LinearLayout formContainer;
+    private Button btnOpenAddForm, btnSaveEvent, btnCloseForm, btnCancel;
     private RecyclerView rvEvents;
     private AdminEventAdapter adapter;
 
@@ -37,6 +39,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
     private CollectionReference eventsRef;
     private ListenerRegistration eventsListener;
     private Event selectedEvent;
+    private boolean isEditMode = false;
     private List<Event> currentEventList = new ArrayList<>();
 
     @Override
@@ -50,9 +53,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
         etCapacity = findViewById(R.id.etEventCapacity);
         etEventDate = findViewById(R.id.etEventDate);
 
-        btnAdd = findViewById(R.id.btnAddEvent);
-        btnEdit = findViewById(R.id.btnEditEvent);
-        btnCancel = findViewById(R.id.btnDeleteEvent);
+        formContainer = findViewById(R.id.formContainer);
+        btnOpenAddForm = findViewById(R.id.btnOpenAddForm);
+        btnSaveEvent = findViewById(R.id.btnSaveEvent);
+        btnCloseForm = findViewById(R.id.btnCloseForm);
+        btnCancel = findViewById(R.id.btnCancelEvent);
+
 
         rvEvents = findViewById(R.id.rvEvents);
         rvEvents.setLayoutManager(new LinearLayoutManager(this));
@@ -66,14 +72,46 @@ public class AdminDashboardActivity extends AppCompatActivity {
         adapter.setOnItemClickListener(event -> {
             selectedEvent = event;
             populateFields(event);
+            formContainer.setVisibility(View.VISIBLE);
+            setMode(true);
+        });
+
+        btnOpenAddForm.setOnClickListener(v -> {
+            selectedEvent = null;
+            clearFields();
+            formContainer.setVisibility(View.VISIBLE);
+            setMode(true);
+        });
+
+        btnSaveEvent.setOnClickListener(v -> {
+            if (selectedEvent != null) {
+                editEvent();
+            } else {
+                addEvent();
+            }
+            formContainer.setVisibility(View.GONE);
+            setMode(false);
+        });
+
+        btnCancel.setOnClickListener(v -> {
+            if (selectedEvent != null) {
+                cancelEvent();
+                formContainer.setVisibility(View.GONE);
+                setMode(false);
+            } else {
+                Toast.makeText(this, "Select an event first", Toast.LENGTH_SHORT).show();
+            }
         });
 
         // Listen for events in Firestore
         listenToEvents();
 
-        btnAdd.setOnClickListener(v -> addEvent());
-        btnEdit.setOnClickListener(v -> editEvent());
-        btnCancel.setOnClickListener(v -> cancelEvent());
+        btnCloseForm.setOnClickListener(v -> {
+            formContainer.setVisibility(View.GONE);
+            clearFields();
+            selectedEvent = null;
+            setMode(false);
+        });
 
         etEventDate.setOnClickListener(v -> showDatePicker());
     }
@@ -146,13 +184,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
             Event updatedEvent = buildEventFromInput(selectedEvent.getEventID());
             if (updatedEvent != null) {
                 eventsRef.document(selectedEvent.getEventID())
-                        .update(
-                                "name", updatedEvent.getName(),
-                                "date", updatedEvent.getDate(),
-                                "location", updatedEvent.getLocation(),
-                                "category", updatedEvent.getCategory(),
-                                "capacity", updatedEvent.getCapacity()
-                        )
+                        .set(updatedEvent)
                         .addOnSuccessListener(aVoid -> {
                             Toast.makeText(this, "Event Updated", Toast.LENGTH_SHORT).show();
                             clearFields();
@@ -224,7 +256,12 @@ public class AdminDashboardActivity extends AppCompatActivity {
             if (value != null && !value.isEmpty()) {
                 for (DocumentSnapshot doc : value.getDocuments()) {
                     Event e = doc.toObject(Event.class);
-                    if (e != null) eventList.add(e);
+                    if (e != null) {
+                        if (e.getBookedSeats() < 0) {
+                            e.setBookedSeats(0);
+                        }
+                        eventList.add(e);
+                    }
                 }
             }
 
@@ -238,6 +275,11 @@ public class AdminDashboardActivity extends AppCompatActivity {
                         .orElse(null);
             }
         });
+    }
+
+    private void setMode(boolean editMode) {
+        isEditMode = editMode;
+        btnOpenAddForm.setVisibility(editMode ? View.GONE : View.VISIBLE);
     }
 
     @Override
