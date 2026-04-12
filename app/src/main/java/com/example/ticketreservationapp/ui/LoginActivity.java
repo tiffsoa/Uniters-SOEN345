@@ -18,9 +18,11 @@ import com.example.ticketreservationapp.R;
 import com.example.ticketreservationapp.utils.AuthValidator;
 import com.google.firebase.FirebaseException;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.auth.PhoneAuthCredential;
 import com.google.firebase.auth.PhoneAuthOptions;
 import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.firestore.FirebaseFirestore;
 
 import java.util.concurrent.TimeUnit;
 
@@ -173,11 +175,34 @@ public class LoginActivity extends AppCompatActivity {
     }
 
     private void handleSuccessfulLogin() {
-        Toast.makeText(LoginActivity.this, "Login Successful!", Toast.LENGTH_SHORT).show();
-        // TODO: redirect to event catalog / main dashboard
-        // Intent intent = new Intent(LoginActivity.this, DashboardActivity.class);
-        // startActivity(intent);
-        // finish();
+        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+
+        if (user != null) {
+            // check the role from Firestore
+            FirebaseFirestore db = FirebaseFirestore.getInstance();
+            db.collection("Users").document(user.getUid())
+                    .get()
+                    .addOnSuccessListener(documentSnapshot -> {
+                        if (documentSnapshot.exists()) {
+                            String role = documentSnapshot.getString("role");
+                            if ("administrator".equalsIgnoreCase(role)) {
+                                // Redirect to Admin Dashboard if role is 'administrator'
+                                Intent intent = new Intent(LoginActivity.this, AdminDashboardActivity.class);
+                                startActivity(intent);
+                                finish();
+                            } else {
+                                // Handle customer login or redirect to a different activity (For now, just show message)
+                                Toast.makeText(LoginActivity.this, "Customer login successful!", Toast.LENGTH_SHORT).show();
+                                // Navigate to customer home (event catalog or other screen)
+                            }
+                        } else {
+                            Toast.makeText(LoginActivity.this, "User role not found.", Toast.LENGTH_SHORT).show();
+                        }
+                    })
+                    .addOnFailureListener(e -> {
+                        Toast.makeText(LoginActivity.this, "Failed to fetch user role: " + e.getMessage(), Toast.LENGTH_SHORT).show();
+                    });
+        }
     }
 
     private void showErrorMsg(Exception e) {

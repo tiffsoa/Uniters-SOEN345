@@ -33,6 +33,7 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
+        isCoreLibraryDesugaringEnabled = true
     }
     testOptions {
         unitTests.all {
@@ -56,4 +57,8 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.3")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher:1.9.3")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
+    implementation("androidx.recyclerview:recyclerview:1.3.1")
+    implementation("com.google.android.material:material:1.4.0")
+    implementation("androidx.cardview:cardview:1.0.0")
 }
