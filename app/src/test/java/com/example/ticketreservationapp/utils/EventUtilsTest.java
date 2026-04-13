@@ -30,7 +30,7 @@ public class EventUtilsTest {
     }
 
     @Test
-    void cancelEvent_shouldMarkCancelled() {
+    void cancelEvent_activeEvent_shouldMarkCancelled() {
         Event e = createEvent();
         EventUtils.cancelEvent(e);
 

@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class AdministratorTest {
 
     @Test
-    public void testAdministratorInitialization() {
+    public void constructor_validInput_shouldInitializeFields() {
         String expectedId = "admin_999";
         String expectedEmail = "admin@system.com";
         String expectedPhone = "+15559990000";

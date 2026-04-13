@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class InputValidatorTest {
 
     @Test
-    void validInput_shouldPass() {
+    void validate_validInput_shouldPass() {
         assertDoesNotThrow(() ->
                 InputValidator.validate(
                         "Orchestra Concert",
@@ -19,7 +19,7 @@ public class InputValidatorTest {
     }
 
     @Test
-    void emptyName_shouldThrow() {
+    void validate_emptyName_shouldThrow() {
         Exception e = assertThrows(IllegalArgumentException.class, () ->
                 InputValidator.validate(
                         "",
@@ -34,7 +34,7 @@ public class InputValidatorTest {
     }
 
     @Test
-    void nullLocation_shouldThrow() {
+    void validate_nullLocation_shouldThrow() {
         assertThrows(IllegalArgumentException.class, () ->
                 InputValidator.validate(
                         "A",
@@ -47,7 +47,7 @@ public class InputValidatorTest {
     }
 
     @Test
-    void emptyCapacity_shouldThrow() {
+    void validate_emptyCapacity_shouldThrow() {
         assertThrows(IllegalArgumentException.class, () ->
                 InputValidator.validate(
                         "A",
