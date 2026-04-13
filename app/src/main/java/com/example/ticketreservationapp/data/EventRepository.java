@@ -52,4 +52,23 @@ public class EventRepository {
                 }).addOnSuccessListener(aVoid -> onSuccess.run())
                 .addOnFailureListener(e -> onError.accept(e.getMessage()));
     }
+    public void getAllEvents(java.util.function.Consumer<java.util.List<Event>> onSuccess,
+                         java.util.function.Consumer<String> onError) {
+
+    ref.get()
+        .addOnSuccessListener(querySnapshot -> {
+            java.util.List<Event> events = new java.util.ArrayList<>();
+
+            for (com.google.firebase.firestore.DocumentSnapshot doc : querySnapshot.getDocuments()) {
+                Event event = doc.toObject(Event.class);
+
+                if (event != null && !event.isCancelled()) {
+                    events.add(event);
+                }
+            }
+
+            onSuccess.accept(events);
+        })
+        .addOnFailureListener(e -> onError.accept(e.getMessage()));
+}
 }
