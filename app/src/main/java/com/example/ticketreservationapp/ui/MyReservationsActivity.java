@@ -101,6 +101,14 @@ public class MyReservationsActivity extends AppCompatActivity {
                         }
                     }
 
+                    // Sort newest first by booking date
+                    list.sort((a, b) -> {
+                        if (a.getCreatedAt() == null && b.getCreatedAt() == null) return 0;
+                        if (a.getCreatedAt() == null) return 1;
+                        if (b.getCreatedAt() == null) return -1;
+                        return b.getCreatedAt().compareTo(a.getCreatedAt());
+                    });
+
                     // Fetch event names for display
                     if (eventIDs.isEmpty()) {
                         adapter.setReservations(list);
@@ -113,6 +121,7 @@ public class MyReservationsActivity extends AppCompatActivity {
 
     private void fetchEventNames(Set<String> eventIDs, List<Reservation> reservations) {
         Map<String, String> nameMap = new HashMap<>();
+        Map<String, Event> eventMap = new HashMap<>();
         // Firestore whereIn supports max 30 items per query
         List<String> ids = new ArrayList<>(eventIDs);
 
@@ -123,9 +132,11 @@ public class MyReservationsActivity extends AppCompatActivity {
                         Event event = doc.toObject(Event.class);
                         if (event != null) {
                             nameMap.put(event.getEventID(), event.getName());
+                            eventMap.put(event.getEventID(), event);
                         }
                     }
                     adapter.setEventNameMap(nameMap);
+                    adapter.setEventMap(eventMap);
                     adapter.setReservations(reservations);
                 })
                 .addOnFailureListener(e -> {

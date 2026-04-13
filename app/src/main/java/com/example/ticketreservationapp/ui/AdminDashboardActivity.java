@@ -1,9 +1,12 @@
 package com.example.ticketreservationapp.ui;
 
 import android.app.DatePickerDialog;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.View;
 import android.widget.*;
+
+import androidx.appcompat.app.AlertDialog;
 
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.recyclerview.widget.LinearLayoutManager;
@@ -24,7 +27,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
 
     private EditText etName, etLocation, etCategory, etCapacity, etEventDate;
     private LinearLayout formContainer;
-    private Button btnOpenAddForm, btnSaveEvent, btnCloseForm, btnCancel;
+    private Button btnOpenAddForm, btnSaveEvent, btnCloseForm, btnCancel, btnLogout;
     private RecyclerView rvEvents;
 
     private AdminEventAdapter adapter;
@@ -124,6 +127,20 @@ public class AdminDashboardActivity extends AppCompatActivity {
         btnCloseForm.setOnClickListener(v -> hideForm());
 
         etEventDate.setOnClickListener(v -> showDatePicker());
+
+        btnLogout.setOnClickListener(v -> {
+            new AlertDialog.Builder(this)
+                    .setTitle("Log Out")
+                    .setMessage("Are you sure you want to log out?")
+                    .setPositiveButton("Log Out", (dialog, which) -> {
+                        com.google.firebase.auth.FirebaseAuth.getInstance().signOut();
+                        Intent intent = new Intent(this, LoginActivity.class);
+                        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TASK);
+                        startActivity(intent);
+                    })
+                    .setNegativeButton("Cancel", null)
+                    .show();
+        });
     }
 
     private void listenToEvents() {
@@ -195,6 +212,7 @@ public class AdminDashboardActivity extends AppCompatActivity {
         btnSaveEvent = findViewById(R.id.btnSaveEvent);
         btnCloseForm = findViewById(R.id.btnCloseForm);
         btnCancel = findViewById(R.id.btnCancelEvent);
+        btnLogout = findViewById(R.id.btnAdminLogout);
         rvEvents = findViewById(R.id.rvEvents);
     }
 

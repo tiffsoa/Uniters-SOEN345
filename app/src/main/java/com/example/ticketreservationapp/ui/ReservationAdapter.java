@@ -24,6 +24,7 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
 
     // Maps event IDs to event names for display purposes
     private java.util.Map<String, String> eventNameMap = new java.util.HashMap<>();
+    private java.util.Map<String, com.example.ticketreservationapp.models.Event> eventMap = new java.util.HashMap<>();
 
     public interface OnCancelClickListener {
         void onCancelClick(Reservation reservation);
@@ -35,6 +36,10 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
 
     public void setEventNameMap(java.util.Map<String, String> map) {
         this.eventNameMap = map;
+    }
+
+    public void setEventMap(java.util.Map<String, com.example.ticketreservationapp.models.Event> map) {
+        this.eventMap = map;
     }
 
     @NonNull
@@ -51,6 +56,19 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
 
         String eventName = eventNameMap.getOrDefault(res.getEventID(), "Event: " + res.getEventID());
         holder.tvEventName.setText(eventName);
+
+        com.example.ticketreservationapp.models.Event event = eventMap.get(res.getEventID());
+        if (event != null) {
+            holder.tvCategory.setText("Category: " + event.getCategory());
+            holder.tvLocation.setText("Location: " + event.getLocation());
+            holder.tvEventDate.setText("Date: " +
+                    new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(event.getDate()));
+        } else {
+            holder.tvCategory.setText("");
+            holder.tvLocation.setText("");
+            holder.tvEventDate.setText("");
+        }
+
         holder.tvTicketCount.setText("Tickets: " + res.getTicketCount());
         holder.tvReservationID.setText("Reservation: " + res.getReservationID());
 
@@ -87,12 +105,15 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
     }
 
     static class ViewHolder extends RecyclerView.ViewHolder {
-        TextView tvEventName, tvTicketCount, tvReservationID, tvCreatedAt, tvStatus;
+        TextView tvEventName, tvCategory, tvLocation, tvEventDate, tvTicketCount, tvReservationID, tvCreatedAt, tvStatus;
         Button btnCancel;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
             tvEventName = itemView.findViewById(R.id.tvResEventName);
+            tvCategory = itemView.findViewById(R.id.tvResCategory);
+            tvLocation = itemView.findViewById(R.id.tvResLocation);
+            tvEventDate = itemView.findViewById(R.id.tvResEventDate);
             tvTicketCount = itemView.findViewById(R.id.tvResTicketCount);
             tvReservationID = itemView.findViewById(R.id.tvResID);
             tvCreatedAt = itemView.findViewById(R.id.tvResCreatedAt);

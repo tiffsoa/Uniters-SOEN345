@@ -1,5 +1,6 @@
 package com.example.ticketreservationapp.ui;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -42,26 +43,30 @@ public class CustomerEventAdapter extends RecyclerView.Adapter<CustomerEventAdap
     public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
         Event event = events.get(position);
         holder.tvName.setText(event.getName());
-        holder.tvLocation.setText(event.getLocation());
-        holder.tvCategory.setText(event.getCategory());
-        holder.tvDate.setText(new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(event.getDate()));
+        holder.tvCategory.setText("Category: " + event.getCategory());
+        holder.tvLocation.setText("Location: " + event.getLocation());
+        holder.tvDate.setText("Date: " + new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(event.getDate()));
 
         int remaining = event.getCapacity() - event.getBookedSeats();
         holder.tvSeats.setText("Available: " + remaining + " / " + event.getCapacity());
+        holder.tvSeats.setTextColor(remaining <= 0 ? Color.RED : Color.parseColor("#1976D2"));
 
         if (event.isCancelled()) {
             holder.tvCancelled.setVisibility(View.VISIBLE);
             holder.btnBook.setVisibility(View.GONE);
+            holder.card.setCardBackgroundColor(0xFFE0E0E0);
         } else if (remaining <= 0) {
             holder.tvCancelled.setVisibility(View.GONE);
             holder.btnBook.setVisibility(View.VISIBLE);
             holder.btnBook.setText("Sold Out");
             holder.btnBook.setEnabled(false);
+            holder.card.setCardBackgroundColor(0xFFFFFFFF);
         } else {
             holder.tvCancelled.setVisibility(View.GONE);
             holder.btnBook.setVisibility(View.VISIBLE);
             holder.btnBook.setText("Book");
             holder.btnBook.setEnabled(true);
+            holder.card.setCardBackgroundColor(0xFFFFFFFF);
         }
 
         holder.btnBook.setOnClickListener(v -> {
@@ -82,9 +87,11 @@ public class CustomerEventAdapter extends RecyclerView.Adapter<CustomerEventAdap
     static class ViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvLocation, tvCategory, tvDate, tvSeats, tvCancelled;
         Button btnBook;
+        com.google.android.material.card.MaterialCardView card;
 
         public ViewHolder(@NonNull View itemView) {
             super(itemView);
+            card = itemView.findViewById(R.id.customerEventCard);
             tvName = itemView.findViewById(R.id.tvCustomerEventName);
             tvLocation = itemView.findViewById(R.id.tvCustomerEventLocation);
             tvCategory = itemView.findViewById(R.id.tvCustomerEventCategory);

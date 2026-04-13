@@ -1,6 +1,7 @@
 <com.google.android.material.card.MaterialCardView
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:card_view="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/customerEventCard"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     card_view:cardElevation="4dp"
@@ -24,16 +25,16 @@
             android:layout_height="wrap_content"/>
 
         <TextView
-            android:id="@+id/tvCustomerEventLocation"
-            android:text="Location"
+            android:id="@+id/tvCustomerEventCategory"
+            android:text="Category: x"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="14sp"
             android:layout_marginTop="4dp"/>
 
         <TextView
-            android:id="@+id/tvCustomerEventCategory"
-            android:text="Category"
+            android:id="@+id/tvCustomerEventLocation"
+            android:text="Location: x"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="14sp"
@@ -41,7 +42,7 @@
 
         <TextView
             android:id="@+id/tvCustomerEventDate"
-            android:text="Date"
+            android:text="Date: dd/mm/yyyy"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textSize="14sp"
@@ -60,6 +61,7 @@
             android:id="@+id/tvCustomerEventCancelled"
             android:text="Event Cancelled"
             android:textColor="#FF0000"
+            android:textStyle="bold"
             android:textSize="14sp"
             android:visibility="gone"
             android:layout_width="wrap_content"

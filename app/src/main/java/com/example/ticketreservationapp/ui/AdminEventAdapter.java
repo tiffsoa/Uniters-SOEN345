@@ -1,5 +1,6 @@
 package com.example.ticketreservationapp.ui;
 
+import android.graphics.Color;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -41,10 +42,22 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Ev
     public void onBindViewHolder(@NonNull EventViewHolder holder, int position) {
         Event event = events.get(position);
         holder.tvName.setText(event.getName());
-        holder.tvDetails.setText(event.getLocation() + " - " + event.getCategory() + " - Capacity: " + event.getCapacity());
-        holder.tvDate.setText(new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(event.getDate()));
         holder.tvEventID.setText("Event ID: " + event.getEventID());
-        holder.tvCancelled.setVisibility(event.isCancelled() ? View.VISIBLE : View.GONE);
+        holder.tvCategory.setText("Category: " + event.getCategory());
+        holder.tvLocation.setText("Location: " + event.getLocation());
+        holder.tvDate.setText("Date: " + new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(event.getDate()));
+
+        int remaining = event.getCapacity() - event.getBookedSeats();
+        holder.tvSeats.setText("Available: " + remaining + " / " + event.getCapacity());
+        holder.tvSeats.setTextColor(remaining <= 0 ? Color.RED : Color.parseColor("#1976D2"));
+
+        if (event.isCancelled()) {
+            holder.tvCancelled.setVisibility(View.VISIBLE);
+            holder.card.setCardBackgroundColor(0xFFE0E0E0);
+        } else {
+            holder.tvCancelled.setVisibility(View.GONE);
+            holder.card.setCardBackgroundColor(0xFFFFFFFF);
+        }
 
         holder.itemView.setOnClickListener(v -> {
             if (listener != null) {
@@ -64,13 +77,17 @@ public class AdminEventAdapter extends RecyclerView.Adapter<AdminEventAdapter.Ev
     }
 
     static class EventViewHolder extends RecyclerView.ViewHolder {
-        TextView tvName, tvDetails, tvDate, tvEventID, tvCancelled;
+        TextView tvName, tvCategory, tvLocation, tvDate, tvSeats, tvEventID, tvCancelled;
+        com.google.android.material.card.MaterialCardView card;
 
         public EventViewHolder(@NonNull View itemView) {
             super(itemView);
+            card = itemView.findViewById(R.id.adminEventCard);
             tvName = itemView.findViewById(R.id.tvEventName);
-            tvDetails = itemView.findViewById(R.id.tvEventDetails);
+            tvCategory = itemView.findViewById(R.id.tvEventCategory);
+            tvLocation = itemView.findViewById(R.id.tvEventLocation);
             tvDate = itemView.findViewById(R.id.tvEventDate);
+            tvSeats = itemView.findViewById(R.id.tvEventSeats);
             tvEventID = itemView.findViewById(R.id.tvEventID);
             tvCancelled = itemView.findViewById(R.id.tvCancelled);
         }

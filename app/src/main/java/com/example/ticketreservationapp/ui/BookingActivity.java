@@ -1,5 +1,6 @@
 package com.example.ticketreservationapp.ui;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import android.widget.*;
 
@@ -19,7 +20,7 @@ import java.util.Locale;
 // Booking screen: shows event details, lets customer pick ticket count and confirm
 public class BookingActivity extends AppCompatActivity {
 
-    private TextView tvEventName, tvEventDetails, tvEventDate, tvAvailableSeats;
+    private TextView tvEventName, tvEventCategory, tvEventLocation, tvEventDate, tvAvailableSeats;
     private EditText etTicketCount;
     private Button btnConfirm, btnBack;
 
@@ -56,7 +57,8 @@ public class BookingActivity extends AppCompatActivity {
 
     private void bindViews() {
         tvEventName = findViewById(R.id.tvBookingEventName);
-        tvEventDetails = findViewById(R.id.tvBookingEventDetails);
+        tvEventCategory = findViewById(R.id.tvBookingEventCategory);
+        tvEventLocation = findViewById(R.id.tvBookingEventLocation);
         tvEventDate = findViewById(R.id.tvBookingEventDate);
         tvAvailableSeats = findViewById(R.id.tvBookingAvailableSeats);
         etTicketCount = findViewById(R.id.etTicketCount);
@@ -83,11 +85,13 @@ public class BookingActivity extends AppCompatActivity {
 
     private void populateEventDetails() {
         tvEventName.setText(currentEvent.getName());
-        tvEventDetails.setText(currentEvent.getLocation() + " - " + currentEvent.getCategory());
-        tvEventDate.setText(new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(currentEvent.getDate()));
+        tvEventCategory.setText("Category: " + currentEvent.getCategory());
+        tvEventLocation.setText("Location: " + currentEvent.getLocation());
+        tvEventDate.setText("Date: " + new SimpleDateFormat("dd/MM/yyyy", Locale.getDefault()).format(currentEvent.getDate()));
 
         int remaining = currentEvent.getCapacity() - currentEvent.getBookedSeats();
         tvAvailableSeats.setText("Available seats: " + remaining);
+        tvAvailableSeats.setTextColor(remaining <= 0 ? Color.RED : Color.parseColor("#1976D2"));
 
         if (currentEvent.isCancelled()) {
             btnConfirm.setEnabled(false);
