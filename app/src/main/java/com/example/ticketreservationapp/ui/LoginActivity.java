@@ -216,9 +216,10 @@ public class LoginActivity extends AppCompatActivity {
                                 startActivity(intent);
                                 finish();
                             } else {
-                                // Handle customer login or redirect to a different activity (For now, just show message)
-                                Toast.makeText(LoginActivity.this, "Customer login successful!", Toast.LENGTH_SHORT).show();
-                                // Navigate to customer home (event catalog or other screen)
+                                // Route customer to their dashboard
+                                Intent customerIntent = new Intent(LoginActivity.this, CustomerDashboardActivity.class);
+                                startActivity(customerIntent);
+                                finish();
                             }
                         } else {
                             Toast.makeText(LoginActivity.this, "User role not found.", Toast.LENGTH_SHORT).show();
