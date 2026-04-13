@@ -7,6 +7,7 @@ import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 
 import com.example.ticketreservationapp.ui.LoginActivity;
+import com.example.ticketreservationapp.ui.EventsCatalogActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.example.ticketreservationapp.utils.FirestoreService;
@@ -25,9 +26,9 @@ public class MainActivity extends AppCompatActivity {
             //show main dashboard that lists events
             Toast.makeText(this, "Welcome back! Routing to Dashboard...", Toast.LENGTH_SHORT).show();
 
-            // Intent intent = new Intent(MainActivity.this, EventsCatalogActivity.class);
-            // startActivity(intent);
-            // finish();
+             Intent intent = new Intent(MainActivity.this, EventsCatalogActivity.class);
+             startActivity(intent);
+             finish();
 
         } else {
             Intent intent = new Intent(MainActivity.this, LoginActivity.class);
