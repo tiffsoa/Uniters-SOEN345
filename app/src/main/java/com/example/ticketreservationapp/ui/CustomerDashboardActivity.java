@@ -48,6 +48,7 @@ public class CustomerDashboardActivity extends AppCompatActivity {
                 android.graphics.Rect rect = new android.graphics.Rect();
                 focused.getGlobalVisibleRect(rect);
                 if (!rect.contains((int) event.getRawX(), (int) event.getRawY())) {
+                    ((EditText) focused).setCursorVisible(false);
                     focused.clearFocus();
                     InputMethodManager imm = (InputMethodManager) getSystemService(INPUT_METHOD_SERVICE);
                     imm.hideSoftInputFromWindow(focused.getWindowToken(), 0);
@@ -103,12 +104,14 @@ public class CustomerDashboardActivity extends AppCompatActivity {
 
         etFilterDate.setOnClickListener(v -> {
             java.util.Calendar c = java.util.Calendar.getInstance();
-            new android.app.DatePickerDialog(this,
+            android.app.DatePickerDialog dialog = new android.app.DatePickerDialog(this,
                     (view, y, m, d) -> etFilterDate.setText(d + "/" + (m + 1) + "/" + y),
                     c.get(java.util.Calendar.YEAR),
                     c.get(java.util.Calendar.MONTH),
                     c.get(java.util.Calendar.DAY_OF_MONTH)
-            ).show();
+            );
+            dialog.getDatePicker().setMinDate(System.currentTimeMillis() - 1000);
+            dialog.show();
         });
 
         btnMyReservations.setOnClickListener(v -> {
@@ -135,9 +138,13 @@ public class CustomerDashboardActivity extends AppCompatActivity {
             allEvents.clear();
 
             if (value != null) {
+                java.util.Date now = new java.util.Date();
                 for (DocumentSnapshot doc : value.getDocuments()) {
                     Event e = doc.toObject(Event.class);
-                    if (e != null) allEvents.add(e);
+                    // Hide cancelled and past events from customer view
+                    if (e != null && !e.isCancelled() && e.getDate() != null && !e.getDate().before(now)) {
+                        allEvents.add(e);
+                    }
                 }
             }
 
@@ -177,6 +184,8 @@ public class CustomerDashboardActivity extends AppCompatActivity {
             clearIcon.setBounds(0, 0, size, size);
         }
         final Drawable icon = clearIcon;
+
+        editText.setOnFocusChangeListener((v, hasFocus) -> editText.setCursorVisible(hasFocus));
 
         editText.addTextChangedListener(new TextWatcher() {
             @Override public void beforeTextChanged(CharSequence s, int start, int count, int after) {}

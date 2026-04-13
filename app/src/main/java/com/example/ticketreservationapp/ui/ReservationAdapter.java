@@ -83,6 +83,10 @@ public class ReservationAdapter extends RecyclerView.Adapter<ReservationAdapter.
             holder.tvStatus.setText("Cancelled");
             holder.tvStatus.setTextColor(0xFFFF0000);
             holder.btnCancel.setVisibility(View.GONE);
+        } else if (event != null && event.isCancelled()) {
+            holder.tvStatus.setText("Cancelled by Administrator");
+            holder.tvStatus.setTextColor(0xFFFF0000);
+            holder.btnCancel.setVisibility(View.GONE);
         } else {
             holder.tvStatus.setText("Active");
             holder.tvStatus.setTextColor(0xFF4CAF50);
