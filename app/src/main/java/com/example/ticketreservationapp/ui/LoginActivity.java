@@ -125,22 +125,47 @@ public class LoginActivity extends AppCompatActivity {
 
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_NUMBER);
+
+        input.setFilters(new android.text.InputFilter[] { new android.text.InputFilter.LengthFilter(6) });
         builder.setView(input);
 
         builder.setPositiveButton("Verify", (dialog, which) -> {
             String code = input.getText().toString();
-            if (!TextUtils.isEmpty(code)) {
-                String savedVerificationId = loginViewModel.getVerificationId();
-                if (savedVerificationId != null) {
-                    PhoneAuthCredential credential = PhoneAuthProvider.getCredential(savedVerificationId, code);
-                    signInWithPhoneAuthCredential(credential);
-                } else {
-                    Toast.makeText(LoginActivity.this, "Verification ID not found.", Toast.LENGTH_LONG).show();
-                }
+
+            String savedVerificationId = loginViewModel.getVerificationId();
+            if (savedVerificationId != null) {
+                btnLogin.setEnabled(false);
+                PhoneAuthCredential credential = PhoneAuthProvider.getCredential(savedVerificationId, code);
+                signInWithPhoneAuthCredential(credential);
+            } else {
+                Toast.makeText(LoginActivity.this, "Verification ID not found.", Toast.LENGTH_LONG).show();
             }
         });
-        builder.setNegativeButton("Cancel", (dialog, which) -> dialog.cancel());
-        builder.show();
+
+        builder.setNegativeButton("Cancel", (dialog, which) -> {
+            dialog.cancel();
+            btnLogin.setEnabled(true);
+        });
+
+        AlertDialog dialog = builder.create();
+
+        dialog.show();
+
+        Button verifyButton = dialog.getButton(AlertDialog.BUTTON_POSITIVE);
+        verifyButton.setEnabled(false);
+
+        input.addTextChangedListener(new android.text.TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                verifyButton.setEnabled(s != null && s.length() == 6);
+            }
+
+            @Override
+            public void afterTextChanged(android.text.Editable s) {}
+        });
     }
 
     private void signInWithPhoneAuthCredential(PhoneAuthCredential credential) {
