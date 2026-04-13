@@ -8,7 +8,7 @@ public class EventServiceTest {
     EventService service = new EventService();
 
     @Test
-    void createEvent_success() throws Exception {
+    void createEvent_validInput_shouldSucceed() throws Exception {
         Event e = service.createEvent(
                 "Concert",
                 "laval",
@@ -34,7 +34,7 @@ public class EventServiceTest {
     }
 
     @Test
-    void updateEvent_shouldPreserveState() throws Exception {
+    void updateEvent_cancelledEvent_shouldPreserveState() throws Exception {
         Event old = service.createEvent(
                 "A",
                 "B",
@@ -58,7 +58,7 @@ public class EventServiceTest {
     }
 
     @Test
-    void cancel_shouldMarkCancelled() throws Exception {
+    void cancelEvent_valid_shouldMarkCancelled() throws Exception {
         Event e = service.createEvent(
                 "A",
                 "B",

@@ -2,36 +2,47 @@ package com.example.ticketreservationapp;
 
 import android.content.Intent;
 import android.os.Bundle;
-import android.widget.Toast;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import com.example.ticketreservationapp.ui.AdminDashboardActivity;
+import com.example.ticketreservationapp.ui.CustomerDashboardActivity;
 import com.example.ticketreservationapp.ui.LoginActivity;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.example.ticketreservationapp.utils.FirestoreService;
+import com.google.firebase.firestore.FirebaseFirestore;
+
 public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        setContentView(R.layout.activity_main);
-        new FirestoreService().saveTestData();
-        //check if user is signed in
         FirebaseUser currentUser = FirebaseAuth.getInstance().getCurrentUser();
 
         if (currentUser != null) {
-            //show main dashboard that lists events
-            Toast.makeText(this, "Welcome back! Routing to Dashboard...", Toast.LENGTH_SHORT).show();
-
-            // Intent intent = new Intent(MainActivity.this, EventsCatalogActivity.class);
-            // startActivity(intent);
-            // finish();
-
+            // User is already signed in: look up their role and route accordingly
+            FirebaseFirestore.getInstance()
+                    .collection("Users")
+                    .document(currentUser.getUid())
+                    .get()
+                    .addOnSuccessListener(doc -> {
+                        String role = doc.getString("role");
+                        Intent intent;
+                        if ("administrator".equalsIgnoreCase(role)) {
+                            intent = new Intent(this, AdminDashboardActivity.class);
+                        } else {
+                            intent = new Intent(this, CustomerDashboardActivity.class);
+                        }
+                        startActivity(intent);
+                        finish();
+                    })
+                    .addOnFailureListener(e -> {
+                        // Role fetch failed: fall back to login
+                        startActivity(new Intent(this, LoginActivity.class));
+                        finish();
+                    });
         } else {
-            Intent intent = new Intent(MainActivity.this, LoginActivity.class);
-            startActivity(intent);
+            startActivity(new Intent(this, LoginActivity.class));
             finish();
         }
     }

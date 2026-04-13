@@ -38,8 +38,8 @@ public class EventUtils {
         return events.stream()
                 .filter(e ->
                         (date == null || sameDay(e.getDate(), date)) &&
-                                (location == null || e.getLocation().equalsIgnoreCase(location)) &&
-                                (category == null || e.getCategory().equalsIgnoreCase(category))
+                                (location == null || e.getLocation().toLowerCase().contains(location.toLowerCase())) &&
+                                (category == null || e.getCategory().toLowerCase().contains(category.toLowerCase()))
                 )
                 .collect(Collectors.toList());
     }

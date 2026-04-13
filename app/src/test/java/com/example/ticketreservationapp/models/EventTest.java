@@ -5,7 +5,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class EventTest {
     @Test
-    void constructor_shouldInitializeDefaults() {
+    void constructor_allFields_shouldInitializeDefaults() {
         Date date = new Date();
         Event event = new Event("1", "Concert", date, "Toronto", "Music", 100);
 
@@ -19,7 +19,7 @@ class EventTest {
     }
 
     @Test
-    void setters_shouldUpdateFields() {
+    void setters_allFields_shouldUpdateFields() {
         Event event = new Event();
         Date date = new Date();
 
@@ -58,7 +58,7 @@ class EventTest {
     }
 
     @Test
-    void cancelled_shouldDefaultToFalse() {
+    void isCancelled_newEvent_shouldDefaultToFalse() {
         Event event = new Event("1", "Test", new Date(), "Loc", "Cat", 50);
 
         assertFalse(event.isCancelled());

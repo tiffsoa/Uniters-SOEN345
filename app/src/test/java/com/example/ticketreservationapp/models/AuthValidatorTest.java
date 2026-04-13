@@ -8,13 +8,13 @@ import static org.junit.jupiter.api.Assertions.*;
 public class AuthValidatorTest {
 
     @Test
-    public void testValidEmail() {
+    public void isValidEmail_validEmails_shouldReturnTrue() {
         assertTrue(AuthValidator.isValidEmail("test@uniters.com"), "Standard email should be valid");
         assertTrue(AuthValidator.isValidEmail("user.name@domain.co"), "Email with dot should be valid");
     }
 
     @Test
-    public void testInvalidEmail() {
+    public void isValidEmail_invalidEmails_shouldReturnFalse() {
         assertFalse(AuthValidator.isValidEmail(""), "Empty email should be invalid");
         assertFalse(AuthValidator.isValidEmail("test@.com"), "Email missing domain should be invalid");
         assertFalse(AuthValidator.isValidEmail("test.com"), "Email missing @ should be invalid");
@@ -22,27 +22,27 @@ public class AuthValidatorTest {
     }
 
     @Test
-    public void testValidPassword() {
+    public void isValidPassword_validPasswords_shouldReturnTrue() {
         assertTrue(AuthValidator.isValidPassword("123456"), "6 character password should be valid");
         assertTrue(AuthValidator.isValidPassword("StrongPass123!"), "Long password should be valid");
     }
 
     @Test
-    public void testInvalidPassword() {
+    public void isValidPassword_invalidPasswords_shouldReturnFalse() {
         assertFalse(AuthValidator.isValidPassword("12345"), "5 character password should be invalid");
         assertFalse(AuthValidator.isValidPassword(""), "Empty password should be invalid");
         assertFalse(AuthValidator.isValidPassword(null), "Null password should be invalid");
     }
 
     @Test
-    public void testFormatPhoneNumberWithoutPrefix() {
+    public void formatPhoneNumber_withoutPrefix_shouldPrependCountryCode() {
         String rawPhone = "5551234567";
         String expected = "+15551234567";
         assertEquals(expected, AuthValidator.formatPhoneNumber(rawPhone), "Should prepend +1 to raw number");
     }
 
     @Test
-    public void testFormatPhoneNumberWithPrefix() {
+    public void formatPhoneNumber_withPrefix_shouldReturnUnchanged() {
         String rawPhone = "+15551234567";
         assertEquals(rawPhone, AuthValidator.formatPhoneNumber(rawPhone), "Should not alter already prefixed number");
     }

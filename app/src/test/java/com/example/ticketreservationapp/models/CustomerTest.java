@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.*;
 public class CustomerTest {
 
     @Test
-    public void testCustomerInitialization() {
+    public void constructor_validInput_shouldInitializeFields() {
         String expectedId = "user_123";
         String expectedEmail = "test@uniters.com";
         String expectedPhone = "5551234567";
