@@ -1,0 +1,14 @@
+# Copy this file to local.properties and fill in your credentials.
+# local.properties is gitignored — never commit real keys.
+#
+# Evaluators: use the credentials provided in the project report.
+
+# Brevo (email confirmations) — https://app.brevo.com → SMTP & API → API Keys
+brevo.apiKey=YOUR_BREVO_API_KEY
+brevo.senderEmail=YOUR_VERIFIED_SENDER_EMAIL
+brevo.senderName=Uniters Tickets
+
+# Twilio (SMS confirmations) — https://console.twilio.com → Account Info
+twilio.accountSid=YOUR_TWILIO_ACCOUNT_SID
+twilio.authToken=YOUR_TWILIO_AUTH_TOKEN
+twilio.fromNumber=+1XXXXXXXXXX

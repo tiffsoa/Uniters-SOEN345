@@ -15,6 +15,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "858478506978-0o1ae1gqb12qrsqce5nfdafmis1bm3lt.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.ticketreservationapp",
+            "certificate_hash": "1f94e9ac948d4b7e8011a5cc9aec0368a244debd"
+          }
+        },
+        {
           "client_id": "858478506978-3uorqbjifg7v8vdcqkfeut90lrglf32a.apps.googleusercontent.com",
           "client_type": 1,
           "android_info": {
