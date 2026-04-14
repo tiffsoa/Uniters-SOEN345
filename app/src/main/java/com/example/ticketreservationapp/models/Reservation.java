@@ -1,6 +1,7 @@
 package com.example.ticketreservationapp.models;
 
 import java.util.Date;
+import com.google.firebase.firestore.PropertyName;
 
 public class Reservation {
 
@@ -33,7 +34,10 @@ public class Reservation {
     public int getTicketCount() { return ticketCount; }
     public void setTicketCount(int ticketCount) { this.ticketCount = ticketCount; }
 
+    @PropertyName("isCancelled")
     public boolean isCancelled() { return isCancelled; }
+
+    @PropertyName("isCancelled")
     public void setCancelled(boolean cancelled) { this.isCancelled = cancelled; }
 
     public Date getCreatedAt() { return createdAt != null ? (Date) createdAt.clone() : null; }
