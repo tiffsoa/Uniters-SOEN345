@@ -13,3 +13,15 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Firebase cloud functions
+functions/node_modules/
+functions/.env
+functions/.runtimeconfig.json
+
+# Firebase CLI & Emulator logs
+firebase-debug.log
+firebase-debug.*.log
+firestore-debug.log
+ui-debug.log
+functions-debug.log

@@ -11,7 +11,9 @@ import com.example.ticketreservationapp.data.ReservationRepository;
 import com.example.ticketreservationapp.domain.ReservationService;
 import com.example.ticketreservationapp.models.Event;
 import com.example.ticketreservationapp.models.Reservation;
+import com.example.ticketreservationapp.utils.NotificationService;
 import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.*;
 
 import java.text.SimpleDateFormat;
@@ -28,6 +30,7 @@ public class BookingActivity extends AppCompatActivity {
     private CollectionReference eventsRef, reservationsRef;
     private ReservationRepository repository;
     private ReservationService service;
+    private NotificationService notificationService;
 
     private String eventID;
     private Event currentEvent;
@@ -49,6 +52,7 @@ public class BookingActivity extends AppCompatActivity {
         reservationsRef = db.collection("Reservations");
         repository = new ReservationRepository(reservationsRef, eventsRef);
         service = new ReservationService();
+        notificationService = new NotificationService();
 
         bindViews();
         setupListeners();
@@ -135,6 +139,16 @@ public class BookingActivity extends AppCompatActivity {
             btnConfirm.setEnabled(false);
             repository.book(reservation,
                     () -> {
+                        // Send confirmation to the customer
+                        FirebaseUser user = FirebaseAuth.getInstance().getCurrentUser();
+                        if (user != null) {
+                            notificationService.sendBookingConfirmation(
+                                    user.getEmail(),
+                                    user.getPhoneNumber(),
+                                    currentEvent,
+                                    reservation
+                            );
+                        }
                         Toast.makeText(this, "Booking confirmed!", Toast.LENGTH_SHORT).show();
                         finish();
                     },

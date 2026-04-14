@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     id("com.google.gms.google-services")
@@ -5,6 +7,11 @@ plugins {
 
 android {
     namespace = "com.example.ticketreservationapp"
+
+    val localProps = Properties().apply {
+        val f = rootProject.file("local.properties")
+        if (f.exists()) load(f.inputStream())
+    }
     compileSdk {
         version = release(36) {
             minorApiLevel = 1
@@ -19,6 +26,17 @@ android {
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        buildConfigField("String", "BREVO_API_KEY",      "\"${localProps["brevo.apiKey"]      ?: ""}\"")
+        buildConfigField("String", "BREVO_SENDER_EMAIL", "\"${localProps["brevo.senderEmail"] ?: ""}\"")
+        buildConfigField("String", "BREVO_SENDER_NAME",  "\"${localProps["brevo.senderName"]  ?: "Uniters Tickets"}\"")
+        buildConfigField("String", "TWILIO_ACCOUNT_SID", "\"${localProps["twilio.accountSid"] ?: ""}\"")
+        buildConfigField("String", "TWILIO_AUTH_TOKEN",  "\"${localProps["twilio.authToken"]  ?: ""}\"")
+        buildConfigField("String", "TWILIO_FROM_NUMBER", "\"${localProps["twilio.fromNumber"] ?: ""}\"")
+    }
+
+    buildFeatures {
+        buildConfig = true
     }
 
     buildTypes {
@@ -36,6 +54,7 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
     testOptions {
+        unitTests.isReturnDefaultValues = true
         unitTests.all {
             it.useJUnitPlatform()
         }
