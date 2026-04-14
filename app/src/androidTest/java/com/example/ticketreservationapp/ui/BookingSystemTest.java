@@ -26,35 +26,27 @@ public class BookingSystemTest {
 
     @Before
     public void setUp() {
-        // 1. Create a custom Intent targeting your BookingActivity
         Intent intent = new Intent(ApplicationProvider.getApplicationContext(), BookingActivity.class);
 
-        // 2. Add the required eventID extra so the Activity doesn't immediately finish()
         intent.putExtra("eventID", "dummy_test_event_123");
 
-        // 3. Manually launch the Activity for the test
         ActivityScenario.launch(intent);
     }
 
     @Test
     public void testBookingUI_validatesEmptyQuantity() {
-        // Find the confirm button and click it without entering a quantity
         onView(withId(R.id.btnConfirmBooking)).perform(click());
 
-        // Check if the button is still displayed (meaning we didn't navigate away due to validation failing)
         onView(withId(R.id.btnConfirmBooking)).check(matches(isDisplayed()));
     }
 
     @Test
     public void testBookingUI_entersDataAndSubmits() {
-        // Type "2" into the ticket quantity input
         onView(withId(R.id.etTicketCount))
                 .perform(typeText("2"), closeSoftKeyboard());
 
-        // Verify the text was entered
         onView(withId(R.id.etTicketCount)).check(matches(withText("2")));
 
-        // Click the confirm button
         onView(withId(R.id.btnConfirmBooking)).perform(click());
     }
 }
